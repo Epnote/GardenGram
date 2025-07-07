@@ -1,0 +1,710 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap");
+/* Reset and base styles  */
+* {
+  padding: 0px;
+  margin: 0px;
+  border: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Links */
+a, a:link, a:visited {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+/* Common */
+aside, nav, footer, header, section, main {
+  display: block;
+}
+
+h1, h2, h3, h4, h5, h6, p {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+ul, ul li {
+  list-style: none;
+}
+
+img {
+  vertical-align: top;
+}
+
+img, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+address {
+  font-style: normal;
+}
+
+/* Form */
+input, textarea, button, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background-color: transparent;
+}
+
+input::-ms-clear {
+  display: none;
+}
+
+button, input[type=submit] {
+  display: inline-block;
+  box-shadow: none;
+  background-color: transparent;
+  background: none;
+  cursor: pointer;
+}
+
+input:focus, input:active,
+button:focus, button:active {
+  outline: none;
+}
+
+button::-moz-focus-inner {
+  padding: 0;
+  border: 0;
+}
+
+label {
+  cursor: pointer;
+}
+
+legend {
+  display: block;
+}
+
+.hidden {
+  display: none;
+}
+
+:root {
+  --modal-background: white;
+  --modal-text-color: black;
+}
+
+body.dark {
+  --modal-background-dark: white;
+  --modal-text-color-dark: black;
+  --primary-color-dark: #555;
+  --primary-hover-color-dark: #444;
+}
+
+html, body {
+  font-family: "Montserrat", sans-serif;
+  scroll-behavior: smooth;
+  transition: 0.5s;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: black;
+}
+
+body.dark {
+  background: #333;
+  color: white;
+  border-color: white;
+}
+
+body.dark button {
+  background: #333;
+  color: white;
+  border-color: white;
+}
+body.dark button:hover {
+  background: #ddd;
+  color: black;
+}
+
+body.dark div {
+  background: #333;
+  color: white;
+  border-color: white;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  border: 2px solid black;
+}
+
+.control-row, .info-row, .settings-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  color: black;
+  border: 2px solid #333;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+button:hover {
+  background: #ddd;
+}
+
+.timer {
+  font-size: 24px;
+  font-weight: bold;
+  padding: 10px;
+  border: 2px solid #333;
+  border-radius: 5px;
+}
+
+.sound-setting {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  color: black;
+  border: 2px solid #333;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.sound-setting:hover {
+  background: #ddd;
+}
+
+.game-field {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #333;
+}
+
+.nonogram-container {
+  display: grid;
+  grid-template-areas: "empty col-clues" "row-clues grid";
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
+  border: 1px solid #333;
+}
+
+.col-clues {
+  grid-area: col-clues;
+  display: flex;
+}
+
+.col-clues .clue {
+  min-width: 40px;
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 5px;
+  border: 1px solid #ddd;
+}
+
+.col-clues .clue:nth-child(1) {
+  border-left: 2px solid #333;
+}
+
+.col-clues .clue:nth-child(6) {
+  border-left: 2px solid #333;
+}
+
+.col-clues .clue:nth-child(11) {
+  border-left: 2px solid #333;
+}
+
+.col-clues .clue:nth-child(5n) {
+  border-right: 1px solid #333;
+}
+
+body.dark .col-clues .clue {
+  border-bottom: 2px solid white;
+  border-top: 2px solid white;
+}
+
+body.dark .col-clues .clue:nth-child(1) {
+  border-left: 2px solid white;
+}
+
+body.dark .col-clues .clue:nth-child(6) {
+  border-left: 2px solid white;
+}
+
+body.dark .col-clues .clue:nth-child(11) {
+  border-left: 2px solid white;
+}
+
+body.dark .col-clues .clue:nth-child(5n) {
+  border-right: 2px solid white;
+}
+
+.col-clues .clue span {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.row-clues {
+  grid-area: row-clues;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.row-clues .clue {
+  min-width: 108px;
+  min-height: 40px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 5px;
+  border: 1px solid #ddd;
+  border-left: 1px solid #333;
+  border-right: 1px solid #333;
+}
+
+.row-clues .clue:nth-child(1) {
+  border-top: 2px solid #333;
+}
+
+.row-clues .clue:nth-child(6) {
+  border-top: 2px solid #333;
+}
+
+.row-clues .clue:nth-child(11) {
+  border-top: 2px solid #333;
+}
+
+body.dark .row-clues .clue {
+  border-left: 1px solid white;
+  border-right: 1px solid white;
+}
+
+body.dark .row-clues .clue:nth-child(1) {
+  border-top: 2px solid white;
+}
+
+body.dark .row-clues .clue:nth-child(6) {
+  border-top: 2px solid white;
+}
+
+body.dark .row-clues .clue:nth-child(11) {
+  border-top: 2px solid white;
+}
+
+body.dark .row-clues .clue:nth-child(5n) {
+  border-bottom: 2px solid white;
+}
+
+.clue {
+  display: grid;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  font-weight: bold;
+  background: #f0f0f0;
+  min-width: 40px;
+  min-height: 108px;
+}
+
+.grid {
+  grid-area: grid;
+  display: grid;
+}
+
+.cell {
+  aspect-ratio: 1;
+  background: white;
+  border: 1px solid black;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+/* Толстые линии 5x5: чёрные в светлой теме, белые в тёмной */
+.cell-border-right { border-right: 2px solid black; }
+.cell-border-bottom { border-bottom: 2px solid black; }
+.cell-border-left { border-left: 2px solid black; }
+.cell-border-top { border-top: 2px solid black; }
+
+body.dark .cell-border-right { border-right: 2px solid white; }
+body.dark .cell-border-bottom { border-bottom: 2px solid white; }
+body.dark .cell-border-left { border-left: 2px solid white; }
+body.dark .cell-border-top { border-top: 2px solid white; }
+
+.col-clues:nth-child(5n) {
+  border-right: 2px solid #333;
+}
+
+.col-clues .clue:nth-child(1) {
+  border-left: 2px solid #333;
+}
+
+body.dark .clue {
+  background: #444;
+  color: white;
+  border-color: #666;
+}
+
+body.dark .game-container,
+body.dark .game-field {
+  border: 1px solid #ddd;
+}
+
+body.dark .grid {
+  background: #666;
+}
+
+body.dark .cell {
+  background: #444;
+  border-color: #888;
+}
+
+.cell.filled {
+  background: black;
+}
+
+body.dark .cell.filled {
+  background: white;
+}
+
+.cell.crossed {
+  position: relative;
+}
+
+.cell.crossed::before,
+.cell.crossed::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  height: 2px;
+  background: red;
+  transform-origin: center;
+}
+
+.cell.crossed::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.cell.crossed::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+body.dark .cell.crossed::before,
+body.dark .cell.crossed::after {
+  background: #ff6b6b;
+}
+
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.dropdown-arrow {
+  font-size: 16px;
+  margin-left: 8px;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  min-width: 120px;
+}
+
+.dropdown-option {
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-option:hover {
+  background: #f0f0f0;
+}
+
+body.dark .dropdown-btn {
+  background: #333;
+  color: white;
+  border-color: white;
+}
+
+body.dark .dropdown-content {
+  background: #444;
+  border-color: #666;
+}
+
+body.dark .dropdown-option {
+  color: white;
+}
+
+body.dark .dropdown-option:hover {
+  background: #555;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: var(--modal-background, white);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  text-align: center;
+  max-width: 300px;
+  width: 90%;
+}
+
+.modal-text {
+  font-size: 1rem;
+  color: var(--modal-text-color, black);
+  margin-bottom: 15px;
+}
+
+.modal-close-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--primary-color, white);
+  color: black;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border: 2px solid #333;
+}
+
+.modal-close-btn:hover {
+  background-color: var(--primary-hover-color, #555);
+}
+
+body.dark .modal {
+  background-color: var(--modal-background-dark, white);
+}
+
+body.dark .modal-text {
+  color: var(--modal-text-color-dark, black);
+}
+
+body.dark .modal-close-btn {
+  background-color: var(--primary-color-dark, #555);
+  color: white;
+}
+
+body.dark .modal-close-btn:hover {
+  background-color: var(--primary-hover-color-dark, #444);
+}
+
+/* Стили для библиотеки в темной теме */
+body.dark .modal {
+  background-color: #333;
+  color: white;
+}
+
+body.dark .modal h2 {
+  color: white;
+}
+
+body.dark .modal p {
+  color: #ccc;
+}
+
+body.dark .library-card {
+  background-color: #444;
+  color: white;
+  border: 1px solid #666;
+}
+
+body.dark .library-card:hover {
+  background-color: #555;
+  transform: scale(1.05);
+}
+
+body.dark .library-thumbnail {
+  border: 1px solid #666;
+}
+
+body.dark .library-name {
+  color: white;
+}
+
+body.dark .library-time {
+  color: #ccc;
+}
+
+body.dark .library-date {
+  color: #999;
+}
+
+.high-scores-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.high-scores-modal {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  max-width: 90%;
+  width: 400px;
+  text-align: center;
+}
+
+.high-scores-modal-close-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #333;
+  color: white;
+  border: 2px solid #333;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.high-scores-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.high-scores-table th, .high-scores-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.high-scores-table th {
+  background-color: #f2f2f2;
+}
+
+body.dark th {
+  color: var(--modal-text-color-dark, black);
+}
+
+@media (max-width: 600px) {
+  .main-container {
+    padding: 10px;
+    gap: 10px;
+  }
+  .game-container {
+    padding: 10px;
+  }
+  .clue {
+    font-size: 12px;
+    min-width: 30px;
+    min-height: 30px;
+    letter-spacing: 2px;
+  }
+  .cell {
+    min-width: 30px;
+    min-height: 30px;
+  }
+  .control-row, .info-row, .settings-row {
+    gap: 5px;
+  }
+  button {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+  .timer {
+    font-size: 18px;
+    padding: 6px;
+  }
+  .sound-setting {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+  .game-field {
+    padding: 5px;
+  }
+  .row-clues .clue {
+    font-size: 12px;
+    min-width: 40px;
+    min-height: 40px;
+    letter-spacing: 1px;
+  }
+  .col-clues .clue {
+    font-size: 12px;
+    min-width: 40px;
+    min-height: 40px;
+    letter-spacing: 1px;
+  }
+}
+
+/* Толстые линии 5x5 только внутри игрового поля, с !important */
+.grid .cell-border-right { border-right: 2px solid black !important; }
+.grid .cell-border-bottom { border-bottom: 2px solid black !important; }
+.grid .cell-border-left { border-left: 2px solid black !important; }
+.grid .cell-border-top { border-top: 2px solid black !important; }
+
+body.dark .grid .cell-border-right { border-right: 2px solid white !important; }
+body.dark .grid .cell-border-bottom { border-bottom: 2px solid white !important; }
+body.dark .grid .cell-border-left { border-left: 2px solid white !important; }
+body.dark .grid .cell-border-top { border-top: 2px solid white !important; }

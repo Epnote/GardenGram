@@ -1,0 +1,454 @@
+html, body {
+    font-family: "Montserrat", sans-serif;
+    scroll-behavior: smooth;
+    transition: 0.5s;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: black;
+}
+
+body.dark {
+    background: #333;
+    color: white;
+}
+
+body.dark button {
+    background: #333;
+    color: white;
+
+    &:hover {
+        background: #ddd;
+        color: black;
+    }
+}
+
+body.dark div {
+    background: #333;
+    color: white;
+}
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.control-row, .info-row, .settings-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    color: black;
+    cursor: pointer;
+    transition: background 0.3s;
+
+    &:hover {
+        background: #ddd;
+    }
+}
+
+.timer {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.sound-setting {
+    padding: 8px 16px;
+    border-radius: 4px;
+    color: black;
+    cursor: pointer;
+    transition: background 0.3s;
+
+    &:hover {
+        background: #ddd;
+    }
+}
+
+.game-field {
+    width: 100%;
+    padding: 15px;
+}
+
+.nonogram-container {
+    display: grid;
+    grid-template-areas:
+        "empty col-clues"
+        "row-clues grid";
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    border-bottom: 6px solid #333 !important;
+    border-right: 6px solid #333 !important;
+    // gap: 5px;
+}
+
+.col-clues {
+    grid-area: col-clues;
+    display: flex;
+    border-bottom: 3px solid #888 !important;
+}
+
+.col-clues .clue {
+    min-width: 40px;
+    min-height: 108px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 5px;
+}
+
+.col-clues .clue span {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.row-clues {
+    grid-area: row-clues;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    border-right: 3px solid #888 !important;
+}
+
+.row-clues .clue {
+    min-width: 108px;
+    min-height: 40px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    // padding: 5px;
+    font-size: 12px;
+    letter-spacing: 5px;
+}
+// .row-clues .clue:nth-child(5n){
+//     border-bottom: 2px solid #333;
+// }
+
+.clue {
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    font-weight: bold;
+    background: #f0f0f0;
+    min-width: 40px;
+    min-height: 108px;
+    border-bottom: 1px solid #bbb;
+}
+
+.grid {
+    grid-area: grid;
+    display: grid;
+    border: 2px solid #bbb;
+}
+
+.cell {
+    aspect-ratio: 1;
+    background: white;
+    transition: background 0.2s;
+    cursor: pointer;
+    border: 1px solid #ccc;
+}
+
+body.dark .clue {
+    background: #444;
+    color: white;
+}
+
+body.dark .grid {
+    background: #666;
+    border: 2px solid #888;
+}
+
+body.dark .cell {
+    background: #444;
+    border: 1px solid #888;
+}
+
+.cell.filled {
+    background: black;
+}
+
+body.dark .cell.filled {
+    background: white;
+}
+
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.dropdown-arrow {
+    font-size: 16px;
+    margin-left: 8px;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    min-width: 120px;
+}
+
+.dropdown-option {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.dropdown-option:hover {
+    background: #f0f0f0;
+}
+
+body.dark .dropdown-btn {
+    background: #333;
+    color: white;
+}
+
+body.dark .dropdown-content {
+    background: #444;
+}
+
+body.dark .dropdown-option {
+    color: white;
+}
+
+body.dark .dropdown-option:hover {
+    background: #555;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal {
+    background-color: var(--modal-background, white);
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    text-align: center;
+    max-width: 300px;
+    width: 90%;
+}
+
+.modal-text {
+    font-size: 1rem;
+    color: var(--modal-text-color, black);
+    margin-bottom: 15px;
+}
+
+.modal-close-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 8px;
+    background-color: var(--primary-color, white);
+    color: black;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.modal-close-btn:hover {
+    background-color: var(--primary-hover-color, #555);
+}
+
+body.dark .modal {
+    background-color: var(--modal-background-dark, white);
+}
+
+body.dark .modal-text {
+    color: var(--modal-text-color-dark, black);
+}
+
+body.dark .modal-close-btn {
+    background-color: var(--primary-color-dark, #555);
+    color: white;
+}
+
+body.dark .modal-close-btn:hover {
+    background-color: var(--primary-hover-color-dark, #444);
+}
+
+.high-scores-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.high-scores-modal {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    max-width: 90%;
+    width: 400px;
+    text-align: center;
+}
+
+.high-scores-modal-close-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #333;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.high-scores-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.high-scores-table th, .high-scores-table td {
+    padding: 8px;
+    text-align: left;
+}
+
+.high-scores-table th {
+    background-color: #f2f2f2;
+}
+body.dark th {
+    color: var(--modal-text-color-dark, black);
+}
+
+@media (max-width: 600px) {
+    .main-container {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .clue {
+        font-size: 12px;
+        min-width: 30px;
+        min-height: 30px;
+        letter-spacing: 2px;
+    }
+
+    .cell {
+        min-width: 30px;
+        min-height: 30px;
+    }
+
+    .control-row, .info-row, .settings-row {
+        gap: 5px;
+    }
+
+    button {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    .timer {
+        font-size: 18px;
+        padding: 6px;
+    }
+
+    .sound-setting {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    .game-field {
+        padding: 5px;
+    }
+
+    .row-clues .clue {
+        font-size: 12px;
+        min-width: 40px;
+        min-height: 40px;
+        letter-spacing: 1px;
+    }
+
+    .col-clues .clue {
+        font-size: 12px;
+        min-width: 40px;
+        min-height: 40px;
+        letter-spacing: 1px;
+    }
+
+}
+.game-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    border: none !important;
+    border-width: 0 !important;
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+body.dark .grid {
+    border: 2px solid #888;
+}
+body.dark .clue {
+    border-bottom: 1px solid #888;
+}
+
+body.dark .nonogram-container {
+    border: 2px solid #000 !important;
+    border-bottom: 6px solid #888 !important;
+    border-right: 6px solid #888 !important;
+}
+
+body.dark .col-clues {
+    border-bottom: 3px solid #888 !important;
+}
+body.dark .row-clues {
+    border-right: 3px solid #888 !important;
+}

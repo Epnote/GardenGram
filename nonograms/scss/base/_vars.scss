@@ -1,0 +1,11 @@
+:root {
+    --modal-background: white;
+    --modal-text-color: black;
+}
+
+body.dark {
+    --modal-background-dark: white;
+    --modal-text-color-dark: black;
+    --primary-color-dark: #555;
+    --primary-hover-color-dark: #444;
+}
