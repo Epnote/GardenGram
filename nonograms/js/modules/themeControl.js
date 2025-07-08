@@ -6,10 +6,11 @@ export const toggleTheme = () => {
     const isDark = document.body.classList.contains('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     
-    // Обновляем цвет иконки темы
+    // Обновляем цвет и иконку темы
     const themeBtn = document.querySelector('.theme-btn');
     if (themeBtn) {
         themeBtn.style.color = isDark ? 'white' : '#333';
+        themeBtn.textContent = isDark ? '☾' : '☀';
     }
 
     // Форсируем обновление толстых линий 5x5 только внутри .grid
@@ -32,10 +33,12 @@ export const applySavedTheme = () => {
         document.body.classList.remove('dark');
     }
     
-    // Обновляем цвет иконки темы
+    // Обновляем цвет и иконку темы
     const themeBtn = document.querySelector('.theme-btn');
     if (themeBtn) {
-        themeBtn.style.color = document.body.classList.contains('dark') ? 'white' : '#333';
+        const isDark = document.body.classList.contains('dark');
+        themeBtn.style.color = isDark ? 'white' : '#333';
+        themeBtn.textContent = isDark ? '☾' : '☀';
     }
 };
 

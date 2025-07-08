@@ -18,8 +18,8 @@ export function createGameInterface() {
 
     const resetBtn = document.createElement('button');
     resetBtn.className = 'reset-btn';
-    resetBtn.innerHTML = '🔄';
-    resetBtn.style.cssText = 'color: #22c55e; font-size: 50px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    resetBtn.innerHTML = '↻';
+    resetBtn.style.cssText = 'color: #22c55e; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     resetBtn.addEventListener('mouseenter', () => {
         resetBtn.style.transform = 'scale(1.1)';
     });
@@ -30,8 +30,8 @@ export function createGameInterface() {
 
     const randomBtn = document.createElement('button');
     randomBtn.className = 'random-btn';
-    randomBtn.innerHTML = '🎲';
-    randomBtn.style.cssText = 'color: #3b82f6; font-size: 50px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    randomBtn.innerHTML = '⚄';
+    randomBtn.style.cssText = 'color: #3b82f6; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     randomBtn.addEventListener('mouseenter', () => {
         randomBtn.style.transform = 'scale(1.1)';
     });
@@ -42,8 +42,8 @@ export function createGameInterface() {
 
     const libraryBtn = document.createElement('button');
     libraryBtn.className = 'library-btn';
-    libraryBtn.textContent = '📚';
-    libraryBtn.style.cssText = 'color: #8b5cf6; font-size: 50px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    libraryBtn.textContent = '📖';
+    libraryBtn.style.cssText = 'color: #8b5cf6; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     libraryBtn.addEventListener('mouseenter', () => {
         libraryBtn.style.transform = 'scale(1.1)';
     });
@@ -57,10 +57,11 @@ export function createGameInterface() {
 
     const themeBtn = document.createElement('button');
     themeBtn.className = 'theme-btn';
-    themeBtn.textContent = '☯';
-    themeBtn.style.cssText = 'color: #333; font-size: 50px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    themeBtn.textContent = '☀';
+    themeBtn.style.cssText = 'color: #333; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     if (document.body.classList.contains('dark')) {
         themeBtn.style.color = 'white';
+        themeBtn.textContent = '☾';
     }
     themeBtn.addEventListener('mouseenter', () => {
         themeBtn.style.transform = 'scale(1.1)';
@@ -76,8 +77,8 @@ export function createGameInterface() {
     // Кнопки масштабирования
     const zoomInBtn = document.createElement('button');
     zoomInBtn.className = 'zoom-btn';
-    zoomInBtn.innerHTML = '🔍+';
-    zoomInBtn.style.cssText = 'color: #f59e0b; font-size: 30px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    zoomInBtn.innerHTML = '⊕';
+    zoomInBtn.style.cssText = 'color: #f59e0b; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     zoomInBtn.addEventListener('mouseenter', () => {
         zoomInBtn.style.transform = 'scale(1.1)';
     });
@@ -91,8 +92,8 @@ export function createGameInterface() {
 
     const zoomOutBtn = document.createElement('button');
     zoomOutBtn.className = 'zoom-btn';
-    zoomOutBtn.innerHTML = '🔍-';
-    zoomOutBtn.style.cssText = 'color: #f59e0b; font-size: 30px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    zoomOutBtn.innerHTML = '⊖';
+    zoomOutBtn.style.cssText = 'color: #f59e0b; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     zoomOutBtn.addEventListener('mouseenter', () => {
         zoomOutBtn.style.transform = 'scale(1.1)';
     });
@@ -106,8 +107,8 @@ export function createGameInterface() {
 
     const resetZoomBtn = document.createElement('button');
     resetZoomBtn.className = 'zoom-btn';
-    resetZoomBtn.innerHTML = '🎯';
-    resetZoomBtn.style.cssText = 'color: #f59e0b; font-size: 30px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    resetZoomBtn.innerHTML = '⌂';
+    resetZoomBtn.style.cssText = 'color: #f59e0b; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     resetZoomBtn.addEventListener('mouseenter', () => {
         resetZoomBtn.style.transform = 'scale(1.1)';
     });

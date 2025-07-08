@@ -28,6 +28,7 @@ let currentTranslateY = 0;
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
+let dragAnimationFrame = null;
 let lastTranslateX = 0;
 let lastTranslateY = 0;
 
@@ -185,11 +186,15 @@ const initZoomControls = () => {
     const container = document.querySelector('.nonogram-container');
     if (!container) return;
     
-    // Оборачиваем контейнер в wrapper для overflow
-    const wrapper = document.createElement('div');
-    wrapper.className = 'nonogram-wrapper';
-    container.parentNode.insertBefore(wrapper, container);
-    wrapper.appendChild(container);
+    // Проверяем, есть ли уже wrapper
+    let wrapper = container.parentNode;
+    if (!wrapper.classList.contains('nonogram-wrapper')) {
+        // Оборачиваем контейнер в wrapper для overflow
+        wrapper = document.createElement('div');
+        wrapper.className = 'nonogram-wrapper';
+        container.parentNode.insertBefore(wrapper, container);
+        wrapper.appendChild(container);
+    }
     
 
     
@@ -215,13 +220,26 @@ const initZoomControls = () => {
         
         currentTranslateX = e.clientX - dragStartX;
         currentTranslateY = e.clientY - dragStartY;
-        applyTransform();
+        
+        // Используем requestAnimationFrame для оптимизации
+        if (!dragAnimationFrame) {
+            dragAnimationFrame = requestAnimationFrame(() => {
+                applyTransform();
+                dragAnimationFrame = null;
+            });
+        }
     });
     
     document.addEventListener('mouseup', () => {
         if (isDragging) {
             isDragging = false;
             wrapper.style.cursor = 'grab';
+            
+            // Отменяем pending animation frame
+            if (dragAnimationFrame) {
+                cancelAnimationFrame(dragAnimationFrame);
+                dragAnimationFrame = null;
+            }
         }
     });
     
@@ -266,13 +284,26 @@ const initZoomControls = () => {
             // Перетаскивание одним пальцем
             currentTranslateX = e.touches[0].clientX - dragStartX;
             currentTranslateY = e.touches[0].clientY - dragStartY;
-            applyTransform();
+            
+            // Используем requestAnimationFrame для оптимизации
+            if (!dragAnimationFrame) {
+                dragAnimationFrame = requestAnimationFrame(() => {
+                    applyTransform();
+                    dragAnimationFrame = null;
+                });
+            }
         }
     });
     
     wrapper.addEventListener('touchend', () => {
         isDragging = false;
         initialDistance = 0;
+        
+        // Отменяем pending animation frame
+        if (dragAnimationFrame) {
+            cancelAnimationFrame(dragAnimationFrame);
+            dragAnimationFrame = null;
+        }
     }, { passive: true });
 };
 
@@ -458,28 +489,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const randomButton = document.querySelector('.random-btn');
     randomButton.addEventListener('click', () => {
+        // Останавливаем автосохранение
+        stopAutoSave();
+        
         const selectedLevel = getRandomLevel();
         const selectedNonogram = getRandomNonogram(selectedLevel);
         if (selectedNonogram) {
+            // Обновляем текущую нонограмму
             window.currentNonogram = selectedNonogram;
+            
+            // Удаляем старое поле
             const oldField = document.querySelector('.nonogram-container');
-            if (oldField) oldField.remove();
+            if (oldField) {
+                const oldWrapper = oldField.closest('.nonogram-wrapper');
+                if (oldWrapper) {
+                    oldWrapper.remove();
+                } else {
+                    oldField.remove();
+                }
+            }
+            
+            // Создаем новое поле
             const newField = createGameField(selectedNonogram);
             mainContainer.appendChild(newField);
+            
+            // Сбрасываем масштаб и позицию
+            currentScale = 1;
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+            
+            // Инициализируем игровое поле
             initGameField();
             addHint();
             
-            // Инициализируем управление масштабированием для новой игры
+            // Обновляем название в кнопке выбора карты
+            const mapSelectButton = document.querySelector('.map-btn');
+            if (mapSelectButton) {
+                mapSelectButton.querySelector('span:first-child').textContent = selectedNonogram.name;
+            }
+            
+            // Инициализируем управление масштабированием
             setTimeout(() => {
                 initZoomControls();
-                centerNonogram();
-                // Инициализируем клики по подсказкам
                 initClueClickHandlers();
-            }, 100);
+                applyTransform();
+            }, 50);
             
-            // Сохраняем прогресс сразу при переключении на новую игру
-            markGameDirty();
-            saveGameData();
+            // Сбрасываем таймер
+            startTime = new Date();
+            
+            // Запускаем автосохранение для новой игры
+            startAutoSave();
         }
     });
 
