@@ -3,7 +3,7 @@ import { toggleTheme } from './themeControl.js';
 
 
 import { createGameField } from './gameField.js';
-import { initGameField } from '../main.js';
+import { initGameField, zoomNonogram, resetNonogramView } from '../main.js';
 import { showLibrary } from '../main.js';
 
 
@@ -12,20 +12,9 @@ export function createGameInterface() {
     const mainContainer = document.createElement('div');
     mainContainer.className = 'main-container';
 
-    const gameContainer = document.createElement('div');
-    gameContainer.className = 'game-container';
-
-    const controlRow1 = document.createElement('div');
-    controlRow1.className = 'control-row';
-
-    const controlRow2 = document.createElement('div');
-    controlRow2.className = 'control-row';
-
-    const infoRow = document.createElement('div');
-    infoRow.className = 'info-row';
-
-    const settingsRow = document.createElement('div');
-    settingsRow.className = 'settings-row';
+    // Верхние кнопки
+    const topControls = document.createElement('div');
+    topControls.className = 'top-controls';
 
     const resetBtn = document.createElement('button');
     resetBtn.className = 'reset-btn';
@@ -37,7 +26,7 @@ export function createGameInterface() {
     resetBtn.addEventListener('mouseleave', () => {
         resetBtn.style.transform = 'scale(1)';
     });
-    controlRow1.appendChild(resetBtn);
+    topControls.appendChild(resetBtn);
 
     const randomBtn = document.createElement('button');
     randomBtn.className = 'random-btn';
@@ -49,7 +38,7 @@ export function createGameInterface() {
     randomBtn.addEventListener('mouseleave', () => {
         randomBtn.style.transform = 'scale(1)';
     });
-    controlRow1.appendChild(randomBtn);
+    topControls.appendChild(randomBtn);
 
     const libraryBtn = document.createElement('button');
     libraryBtn.className = 'library-btn';
@@ -64,13 +53,12 @@ export function createGameInterface() {
     libraryBtn.addEventListener('click', () => {
         showLibrary();
     });
-    controlRow1.appendChild(libraryBtn);
+    topControls.appendChild(libraryBtn);
 
     const themeBtn = document.createElement('button');
     themeBtn.className = 'theme-btn';
     themeBtn.textContent = '☯';
     themeBtn.style.cssText = 'color: #333; font-size: 50px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
-    // В темной теме делаем иконку белой
     if (document.body.classList.contains('dark')) {
         themeBtn.style.color = 'white';
     }
@@ -83,32 +71,74 @@ export function createGameInterface() {
     themeBtn.addEventListener('click', () => {
         toggleTheme();
     });
-    controlRow1.appendChild(themeBtn);
+    topControls.appendChild(themeBtn);
 
+    // Кнопки масштабирования
+    const zoomInBtn = document.createElement('button');
+    zoomInBtn.className = 'zoom-btn';
+    zoomInBtn.innerHTML = '🔍+';
+    zoomInBtn.style.cssText = 'color: #f59e0b; font-size: 30px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    zoomInBtn.addEventListener('mouseenter', () => {
+        zoomInBtn.style.transform = 'scale(1.1)';
+    });
+    zoomInBtn.addEventListener('mouseleave', () => {
+        zoomInBtn.style.transform = 'scale(1)';
+    });
+    zoomInBtn.addEventListener('click', () => {
+        zoomNonogram(1.2);
+    });
+    topControls.appendChild(zoomInBtn);
 
+    const zoomOutBtn = document.createElement('button');
+    zoomOutBtn.className = 'zoom-btn';
+    zoomOutBtn.innerHTML = '🔍-';
+    zoomOutBtn.style.cssText = 'color: #f59e0b; font-size: 30px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    zoomOutBtn.addEventListener('mouseenter', () => {
+        zoomOutBtn.style.transform = 'scale(1.1)';
+    });
+    zoomOutBtn.addEventListener('mouseleave', () => {
+        zoomOutBtn.style.transform = 'scale(1)';
+    });
+    zoomOutBtn.addEventListener('click', () => {
+        zoomNonogram(0.8);
+    });
+    topControls.appendChild(zoomOutBtn);
 
+    const resetZoomBtn = document.createElement('button');
+    resetZoomBtn.className = 'zoom-btn';
+    resetZoomBtn.innerHTML = '🎯';
+    resetZoomBtn.style.cssText = 'color: #f59e0b; font-size: 30px; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 4px; transition: transform 0.2s;';
+    resetZoomBtn.addEventListener('mouseenter', () => {
+        resetZoomBtn.style.transform = 'scale(1.1)';
+    });
+    resetZoomBtn.addEventListener('mouseleave', () => {
+        resetZoomBtn.style.transform = 'scale(1)';
+    });
+    resetZoomBtn.addEventListener('click', () => {
+        resetNonogramView();
+    });
+    topControls.appendChild(resetZoomBtn);
 
-
-
+    // Подсказка
+    const infoRow = document.createElement('div');
+    infoRow.className = 'info-row';
+    // Функция для определения мобильной платформы
+    const isMobile = () => {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+               window.innerWidth <= 768;
+    };
 
     const hint = document.createElement('div');
     hint.className = 'hint';
-    hint.innerHTML = '<strong>Подсказка:</strong> ЛКМ - заполнить, ПКМ - крестик';
+    
+    if (isMobile()) {
+        hint.innerHTML = '<strong>📱 Мобильное:</strong> Короткое касание - заполнить, долгое касание - крестик, жесты - зум/перемещение';
+    } else {
+        hint.innerHTML = '<strong>💻 ПК:</strong> ЛКМ - заполнить, ПКМ - крестик, колесо мыши - зум, перетаскивание - перемещение';
+    }
     infoRow.appendChild(hint);
 
-
-
-
-
-
-
-
-
-    gameContainer.appendChild(controlRow1);
-    gameContainer.appendChild(controlRow2);
-    gameContainer.appendChild(infoRow);
-    gameContainer.appendChild(settingsRow);
-    mainContainer.appendChild(gameContainer);
-
+    document.body.appendChild(topControls);
+    mainContainer.appendChild(infoRow);
     return mainContainer;
 }

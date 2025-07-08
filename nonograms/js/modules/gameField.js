@@ -31,7 +31,9 @@ export function createGameField(nonogram) {
         clueElement.style.minHeight = `108px`;
         clue.forEach(number => {
             const numberElement = document.createElement('span');
+            numberElement.className = 'clue-number';
             numberElement.textContent = number;
+            numberElement.dataset.value = number;
             clueElement.appendChild(numberElement);
         });
         
@@ -43,7 +45,15 @@ export function createGameField(nonogram) {
         clueElement.className = 'clue';
         clueElement.style.minWidth = `108px`;
         clueElement.style.minHeight = cellSize;
-        clueElement.textContent = clue.join(' ');
+        
+        clue.forEach(number => {
+            const numberElement = document.createElement('span');
+            numberElement.className = 'clue-number';
+            numberElement.textContent = number;
+            numberElement.dataset.value = number;
+            clueElement.appendChild(numberElement);
+        });
+        
         rowCluesContainer.appendChild(clueElement);
     });
 

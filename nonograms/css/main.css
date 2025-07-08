@@ -116,11 +116,25 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
+  width: 100vw;
   color: black;
+  background-image: url('../images/Garden.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 body.dark {
   background: #333;
+  background-image: url('../images/Garden.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: white;
   border-color: white;
 }
@@ -146,9 +160,34 @@ body.dark div {
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  padding: 20px;
-  width: 100%;
-  max-width: 600px;
+  padding: 10px;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  min-height: none;
+  box-sizing: border-box;
+}
+
+.top-controls {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid #333;
+  padding: 8px;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  height: 60px;
+  box-sizing: border-box;
+}
+
+body.dark .top-controls {
+  background: rgba(51, 51, 51, 0.9);
+  border-bottom: 2px solid white;
 }
 
 .game-container {
@@ -215,6 +254,25 @@ button:hover {
   grid-template-columns: auto 1fr;
   grid-template-rows: auto 1fr;
   border: 1px solid #333;
+  transform-origin: center;
+  transition: transform 0.1s ease-out;
+  cursor: grab;
+}
+
+.nonogram-container:active {
+  cursor: grabbing;
+}
+
+.nonogram-wrapper {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 120px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 .col-clues {
@@ -270,11 +328,58 @@ body.dark .col-clues .clue:nth-child(5n) {
   border-right: 2px solid white;
 }
 
-.col-clues .clue span {
-  display: block;
+.col-clues .clue {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 5px;
+}
+
+.col-clues .clue-number,
+.row-clues .clue-number {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
   text-align: center;
-  font-size: 12px;
-  line-height: 1.5;
+  position: relative;
+}
+.row-clues .clue-number.completed,
+.col-clues .clue-number.completed {
+  position: relative;
+  text-align: center;
+}
+.row-clues .clue-number.completed::before,
+.row-clues .clue-number.completed::after,
+.col-clues .clue-number.completed::before,
+.col-clues .clue-number.completed::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 2px;
+  background: #ff6b6b;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 1;
+}
+.row-clues .clue-number.completed::before,
+.col-clues .clue-number.completed::before {
+  transform: translateY(-50%) rotate(45deg);
+}
+.row-clues .clue-number.completed::after,
+.col-clues .clue-number.completed::after {
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+body.dark .clue-number.completed {
+  color: #999;
+}
+
+body.dark .clue-number.completed::before,
+body.dark .clue-number.completed::after {
+  background: #ff8a8a;
 }
 
 .row-clues {
@@ -290,11 +395,19 @@ body.dark .col-clues .clue:nth-child(5n) {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  font-size: 12px;
-  letter-spacing: 5px;
+  padding: 5px;
   border: 1px solid #ddd;
   border-left: 1px solid #333;
   border-right: 1px solid #333;
+  flex-wrap: nowrap;
+}
+
+.row-clues .clue-number {
+  min-width: 20px;
+  text-align: center;
+  letter-spacing: 0;
+  white-space: normal;
+  display: inline-block;
 }
 
 .row-clues .clue:nth-child(1) {
@@ -331,14 +444,52 @@ body.dark .row-clues .clue:nth-child(5n) {
 }
 
 .clue {
-  display: grid;
-  justify-content: center;
-  align-items: center;
-  font-size: 14px;
-  font-weight: bold;
   background: #f0f0f0;
-  min-width: 40px;
-  min-height: 108px;
+  transition: all 0.3s ease;
+}
+
+/* Стили для цифр в подсказках */
+.clue-number {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: bold;
+  position: relative;
+}
+
+/* Стили для зачеркнутых цифр в подсказках */
+.clue-number.completed {
+  position: relative;
+  opacity: 0.6;
+  color: #666;
+}
+
+.clue-number.completed::before,
+.clue-number.completed::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #ff6b6b;
+  transform-origin: center;
+}
+
+.clue-number.completed::before {
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.clue-number.completed::after {
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+body.dark .clue-number.completed {
+  color: #999;
+}
+
+body.dark .clue-number.completed::before,
+body.dark .clue-number.completed::after {
+  background: #ff8a8a;
 }
 
 .grid {
@@ -650,7 +801,19 @@ body.dark th {
 
 @media (max-width: 600px) {
   .main-container {
-    padding: 10px;
+    padding: 5px;
+    gap: 5px;
+    height: 100vh;
+  }
+  
+  .nonogram-wrapper {
+    height: calc(100vh - 100px);
+    padding: 5px;
+  }
+  
+  .top-controls {
+    height: 50px;
+    padding: 5px;
     gap: 10px;
   }
   .game-container {
@@ -696,6 +859,44 @@ body.dark th {
     min-height: 40px;
     letter-spacing: 1px;
   }
+  
+  /* Мобильные стили для касаний */
+  .cell {
+    touch-action: none; /* Отключаем стандартные жесты браузера */
+    user-select: none; /* Запрещаем выделение текста */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+  
+  /* Увеличиваем размер кнопок для удобства на мобильных */
+  .top-controls button {
+    font-size: 40px !important;
+    padding: 15px !important;
+    min-width: 60px;
+    min-height: 60px;
+  }
+  
+  /* Специальные стили для кнопок масштабирования */
+  .zoom-btn {
+    font-size: 35px !important;
+    min-width: 50px;
+    min-height: 50px;
+  }
+  
+  /* Улучшаем читаемость подсказки на мобильных */
+  .hint {
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    margin: 10px 0;
+  }
+  
+  body.dark .hint {
+    background: rgba(51, 51, 51, 0.9);
+  }
 }
 
 /* Толстые линии 5x5 только внутри игрового поля, с !important */
@@ -708,3 +909,86 @@ body.dark .grid .cell-border-right { border-right: 2px solid white !important; }
 body.dark .grid .cell-border-bottom { border-bottom: 2px solid white !important; }
 body.dark .grid .cell-border-left { border-left: 2px solid white !important; }
 body.dark .grid .cell-border-top { border-top: 2px solid white !important; }
+
+/* Убираем все margin у цифр в строках и столбцах */
+.row-clues .clue-number,
+.col-clues .clue-number {
+  margin: 0;
+}
+
+.row-clues .clue,
+.col-clues .clue {
+  gap: 0 !important;
+  padding: 0 !important;
+}
+
+.clue-number {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.col-clues .clue-number.completed::before,
+.col-clues .clue-number.completed::after {
+  width: 200%;
+  height: 4px;
+  left: -50%;
+  top: 45%;
+}
+
+.col-clues .clue-number {
+  position: relative;
+}
+.col-clues .clue-cross {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+.row-clues .clue-number.completed {
+  position: relative;
+  text-align: center;
+}
+.row-clues .clue-number.completed::before,
+.row-clues .clue-number.completed::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1.5px;
+  background: #ff6b6b;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 1;
+}
+.row-clues .clue-number.completed::before {
+  transform: translateY(-50%) rotate(45deg);
+}
+.row-clues .clue-number.completed::after {
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+.row-clues .clue-number.completed::before,
+.row-clues .clue-number.completed::after,
+.col-clues .clue-number.completed::before,
+.col-clues .clue-number.completed::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1.5px;
+  background: #ff6b6b;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 1;
+}
+.row-clues .clue-number.completed::before,
+.col-clues .clue-number.completed::before {
+  transform: translateY(-50%) rotate(45deg);
+}
+.row-clues .clue-number.completed::after,
+.col-clues .clue-number.completed::after {
+  transform: translateY(-50%) rotate(-45deg);
+}

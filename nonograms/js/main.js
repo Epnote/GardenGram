@@ -21,6 +21,16 @@ let autoSaveInterval = null;
 let lastSaveTime = 0;
 let gameStateDirty = false;
 
+// Переменные для масштабирования и перемещения
+let currentScale = 1;
+let currentTranslateX = 0;
+let currentTranslateY = 0;
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let lastTranslateX = 0;
+let lastTranslateY = 0;
+
 // Отметить, что состояние игры изменилось (для автосохранения)
 const markGameDirty = () => {
     gameStateDirty = true;
@@ -75,9 +85,22 @@ const saveGameData = () => {
             filled: cell.classList.contains('filled'),
             crossed: cell.classList.contains('crossed')
         }));
+        
+        // Сохраняем состояние зачеркнутых цифр в подсказках
+        const clueNumbers = document.querySelectorAll('.clue-number');
+        const completedNumbers = Array.from(clueNumbers)
+            .map((number, index) => ({ 
+                index, 
+                value: number.dataset.value,
+                completed: number.classList.contains('completed') 
+            }))
+            .filter(item => item.completed)
+            .map(item => ({ index: item.index, value: item.value }));
+        
         const gameData = {
             nonogramName: currentNonogram.name,
             cellStates: cellStates,
+            completedNumbers: completedNumbers,
             elapsedTime: '00:00'
         };
         localStorage.setItem('savedGame', JSON.stringify(gameData));
@@ -85,6 +108,172 @@ const saveGameData = () => {
     } catch (error) {
         console.error('Error auto-saving game:', error);
     }
+};
+
+// Функция для определения мобильной платформы
+const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+           window.innerWidth <= 768;
+};
+
+// Функции для масштабирования и перемещения
+export const zoomNonogram = (factor) => {
+    const container = document.querySelector('.nonogram-container');
+    if (!container) return;
+    
+    const newScale = Math.max(0.3, Math.min(3, currentScale * factor));
+    currentScale = newScale;
+    
+    applyTransform();
+};
+
+export const resetNonogramView = () => {
+    console.log('Target button clicked');
+    currentScale = 1;
+    currentTranslateX = 0;
+    currentTranslateY = 0;
+    centerNonogram();
+};
+
+const centerNonogram = () => {
+    const container = document.querySelector('.nonogram-container');
+    const wrapper = document.querySelector('.nonogram-wrapper');
+    if (!container || !wrapper) {
+        console.log('Container or wrapper not found');
+        return;
+    }
+    
+    // Ждем, пока элементы полностью загрузятся
+    if (wrapper.offsetWidth === 0 || wrapper.offsetHeight === 0) {
+        console.log('Wrapper not ready, retrying...');
+        setTimeout(centerNonogram, 50);
+        return;
+    }
+    
+    // Центрируем относительно wrapper'а
+    const wrapperCenterX = wrapper.offsetWidth / 2;
+    const wrapperCenterY = wrapper.offsetHeight / 2;
+    
+    console.log('Centering nonogram:', {
+        wrapperWidth: wrapper.offsetWidth,
+        wrapperHeight: wrapper.offsetHeight,
+        centerX: wrapperCenterX,
+        centerY: wrapperCenterY,
+        currentScale: currentScale
+    });
+    
+    // При transform-origin: center, translate перемещает центр элемента
+    // Поскольку nonogram-container уже центрирован в wrapper'е (justify-content: center; align-items: center;)
+    // и transform-origin: center, нам нужно установить translate(0,0) чтобы сохранить центрирование
+    currentTranslateX = 0;
+    currentTranslateY = 0;
+    
+    applyTransform();
+};
+
+const applyTransform = () => {
+    const container = document.querySelector('.nonogram-container');
+    if (!container) return;
+    
+    // При transform-origin: center, translate перемещает центр элемента
+    // currentTranslateX и currentTranslateY уже содержат координаты центра
+    container.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+};
+
+// Функция для инициализации управления масштабированием
+const initZoomControls = () => {
+    const container = document.querySelector('.nonogram-container');
+    if (!container) return;
+    
+    // Оборачиваем контейнер в wrapper для overflow
+    const wrapper = document.createElement('div');
+    wrapper.className = 'nonogram-wrapper';
+    container.parentNode.insertBefore(wrapper, container);
+    wrapper.appendChild(container);
+    
+
+    
+    // Колесо мыши для зума
+    wrapper.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY > 0 ? 0.9 : 1.1;
+        zoomNonogram(factor);
+    });
+    
+    // Перетаскивание мышью
+    wrapper.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.cell')) return; // Не перетаскиваем при клике на клетку
+        
+        isDragging = true;
+        dragStartX = e.clientX - currentTranslateX;
+        dragStartY = e.clientY - currentTranslateY;
+        wrapper.style.cursor = 'grabbing';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        currentTranslateX = e.clientX - dragStartX;
+        currentTranslateY = e.clientY - dragStartY;
+        applyTransform();
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            wrapper.style.cursor = 'grab';
+        }
+    });
+    
+    // Мобильные жесты
+    let initialDistance = 0;
+    let initialScale = 1;
+    
+    wrapper.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.cell')) return; // Не перетаскиваем при касании клетки
+        
+        if (e.touches.length === 2) {
+            // Два пальца - масштабирование
+            initialDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            initialScale = currentScale;
+        } else if (e.touches.length === 1) {
+            // Один палец - перетаскивание
+            isDragging = true;
+            dragStartX = e.touches[0].clientX - currentTranslateX;
+            dragStartY = e.touches[0].clientY - currentTranslateY;
+        }
+    }, { passive: true });
+    
+    wrapper.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        
+        if (e.touches.length === 2) {
+            // Масштабирование двумя пальцами
+            const distance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            
+            if (initialDistance > 0) {
+                const scale = distance / initialDistance;
+                currentScale = Math.max(0.3, Math.min(3, initialScale * scale));
+                applyTransform();
+            }
+        } else if (e.touches.length === 1 && isDragging) {
+            // Перетаскивание одним пальцем
+            currentTranslateX = e.touches[0].clientX - dragStartX;
+            currentTranslateY = e.touches[0].clientY - dragStartY;
+            applyTransform();
+        }
+    });
+    
+    wrapper.addEventListener('touchend', () => {
+        isDragging = false;
+        initialDistance = 0;
+    }, { passive: true });
 };
 
 // Функция для добавления подсказки
@@ -97,12 +286,23 @@ const addHint = () => {
     
     const hint = document.createElement('div');
     hint.className = 'hint';
-    hint.innerHTML = `
-        <p>💡 <strong>Управление:</strong></p>
-        <p>• Левый клик - заполнить/очистить клетку</p>
-        <p>• Правый клик - поставить/убрать крестик</p>
-        <p>• Зажмите кнопку мыши и ведите для быстрого заполнения</p>
-    `;
+    
+    if (isMobile()) {
+        hint.innerHTML = `
+            <p>📱 <strong>Мобильное управление:</strong></p>
+            <p>• Короткое касание - заполнить/очистить клетку</p>
+            <p>• Долгое касание (0.5с) - поставить/убрать крестик</p>
+            <p>• Касание цифры в подсказке - зачеркнуть/убрать зачеркивание</p>
+        `;
+    } else {
+        hint.innerHTML = `
+            <p>💻 <strong>Управление для ПК:</strong></p>
+            <p>• Левый клик - заполнить/очистить клетку</p>
+            <p>• Правый клик - поставить/убрать крестик</p>
+            <p>• Зажмите кнопку мыши и ведите для быстрого заполнения</p>
+            <p>• Клик по цифре в подсказке - зачеркнуть/убрать зачеркивание</p>
+        `;
+    }
     hint.style.cssText = `
         background: rgba(0, 0, 0, 0.8);
         color: white;
@@ -147,6 +347,16 @@ const autoLoadGame = () => {
                 }
             });
             
+            // Восстанавливаем состояние зачеркнутых цифр в подсказках
+            if (savedGameData.completedNumbers) {
+                const clueNumbers = document.querySelectorAll('.clue-number');
+                savedGameData.completedNumbers.forEach(item => {
+                    if (clueNumbers[item.index] && clueNumbers[item.index].dataset.value === item.value) {
+                        clueNumbers[item.index].classList.add('completed');
+                    }
+                });
+            }
+            
 
             
 
@@ -158,6 +368,14 @@ const autoLoadGame = () => {
             if (mapSelectButton) {
                 mapSelectButton.querySelector('span:first-child').textContent = currentNonogram.name;
             }
+            
+            // Инициализируем управление масштабированием для загруженной игры
+            setTimeout(() => {
+                initZoomControls();
+                centerNonogram();
+                // Инициализируем клики по подсказкам
+                initClueClickHandlers();
+            }, 200);
             
             return true; // Сохранение было загружено
         }
@@ -189,6 +407,23 @@ document.addEventListener('DOMContentLoaded', () => {
         addHint();
     }
     
+    // Инициализируем управление масштабированием
+    setTimeout(() => {
+        initZoomControls();
+        centerNonogram();
+        // Инициализируем клики по подсказкам
+        initClueClickHandlers();
+    }, 100);
+    
+    // Центрирование при изменении размера окна
+    window.addEventListener('resize', () => {
+        setTimeout(() => {
+            centerNonogram();
+        }, 100);
+    });
+    
+
+    
     // Запускаем автосохранение каждые 3 секунды
     startAutoSave();
 
@@ -197,6 +432,12 @@ document.addEventListener('DOMContentLoaded', () => {
         cells.forEach(cell => {
             cell.classList.remove('filled');
             cell.classList.remove('crossed');
+        });
+        
+        // Убираем зачеркивания с цифр в подсказках при сбросе
+        const clueNumbers = document.querySelectorAll('.clue-number');
+        clueNumbers.forEach(number => {
+            number.classList.remove('completed');
         });
     };
 
@@ -228,6 +469,14 @@ document.addEventListener('DOMContentLoaded', () => {
             initGameField();
             addHint();
             
+            // Инициализируем управление масштабированием для новой игры
+            setTimeout(() => {
+                initZoomControls();
+                centerNonogram();
+                // Инициализируем клики по подсказкам
+                initClueClickHandlers();
+            }, 100);
+            
             // Сохраняем прогресс сразу при переключении на новую игру
             markGameDirty();
             saveGameData();
@@ -243,6 +492,12 @@ export const initGameField = () => {
     const cells = document.querySelectorAll('.grid .cell');
     updateCellStyles(cells);
     let gameStarted = false;
+    
+    // Переменные для мобильного управления
+    let touchStartTime = 0;
+    let touchStartCell = null;
+    let isLongPress = false;
+    let longPressTimer = null;
     
     // Функция для обработки клика по клетке
     const handleCellClick = (cell, action) => {
@@ -352,6 +607,49 @@ export const initGameField = () => {
         cell.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
+        
+        // Мобильное управление - касания
+        cell.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchStartTime = Date.now();
+            touchStartCell = cell;
+            isLongPress = false;
+            
+            // Таймер для длительного нажатия (крестик)
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                shouldAdd = !cell.classList.contains('crossed');
+                handleCellClick(cell, 'cross');
+            }, 500); // 500ms для длительного нажатия
+        }, { passive: false });
+        
+        cell.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const touchDuration = Date.now() - touchStartTime;
+            
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            
+            // Если это не длительное нажатие и та же клетка
+            if (touchDuration < 500 && touchStartCell === cell && !isLongPress) {
+                shouldAdd = !cell.classList.contains('filled');
+                handleCellClick(cell, 'fill');
+            }
+            
+            touchStartCell = null;
+            isLongPress = false;
+        }, { passive: false });
+        
+        cell.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            // Отменяем длительное нажатие при движении пальца
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }, { passive: false });
     });
     
     // Обработка отпускания кнопки мыши
@@ -579,6 +877,14 @@ export const showLibrary = () => {
                     // Инициализируем игровое поле
                     initGameField();
                     
+                    // Инициализируем управление масштабированием
+                    setTimeout(() => {
+                        initZoomControls();
+                        centerNonogram();
+                        // Инициализируем клики по подсказкам
+                        initClueClickHandlers();
+                    }, 100);
+                    
 
                     
                     // Воспроизводим звук
@@ -650,5 +956,47 @@ export const showLibrary = () => {
     modal.appendChild(closeButton);
     modalOverlay.appendChild(modal);
     document.body.appendChild(modalOverlay);
+};
+
+// Функция для инициализации кликов по цифрам в подсказках
+const initClueClickHandlers = () => {
+    const clueNumbers = document.querySelectorAll('.clue-number');
+    console.log('Инициализация кликов по цифрам в подсказках, найдено:', clueNumbers.length);
+    
+    clueNumbers.forEach((numberElement, index) => {
+        // Удаляем старые обработчики, если они есть
+        numberElement.removeEventListener('click', numberElement._clueClickHandler);
+        
+        // Создаем новый обработчик
+        numberElement._clueClickHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Клик по цифре в подсказке:', index, 'значение:', numberElement.dataset.value);
+            numberElement.classList.toggle('completed');
+            playSound('button-on.mp3');
+            markGameDirty();
+        };
+        
+        numberElement.addEventListener('click', numberElement._clueClickHandler);
+        
+        // Добавляем курсор pointer для цифр
+        numberElement.style.cursor = 'pointer';
+        numberElement.style.padding = '2px 4px';
+        numberElement.style.borderRadius = '3px';
+        numberElement.style.transition = 'all 0.2s ease';
+        
+        // Добавляем hover эффект
+        numberElement.addEventListener('mouseenter', () => {
+            if (!numberElement.classList.contains('completed')) {
+                numberElement.style.backgroundColor = document.body.classList.contains('dark') ? '#555' : '#e0e0e0';
+            }
+        });
+        
+        numberElement.addEventListener('mouseleave', () => {
+            if (!numberElement.classList.contains('completed')) {
+                numberElement.style.backgroundColor = 'transparent';
+            }
+        });
+    });
 };
 
