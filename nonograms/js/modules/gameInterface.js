@@ -3,7 +3,7 @@ import { toggleTheme } from './themeControl.js';
 
 
 import { createGameField } from './gameField.js';
-import { initGameField, zoomNonogram, resetNonogramView } from '../main.js';
+import { initGameField, zoomNonogram, resetNonogramView, showHighScoresModal, showSolution } from '../main.js';
 import { showLibrary } from '../main.js';
 
 
@@ -119,6 +119,43 @@ export function createGameInterface() {
         resetNonogramView();
     });
     topControls.appendChild(resetZoomBtn);
+
+
+
+    // Таймер
+    const timerBtn = document.createElement('button');
+    timerBtn.className = 'timer-btn';
+    timerBtn.innerHTML = '00:00';
+    timerBtn.style.cssText = 'color: #ef4444; font-size: 24px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s; font-family: monospace; min-width: 80px;';
+    timerBtn.addEventListener('mouseenter', () => {
+        timerBtn.style.transform = 'scale(1.1)';
+    });
+    timerBtn.addEventListener('mouseleave', () => {
+        timerBtn.style.transform = 'scale(1)';
+    });
+    timerBtn.addEventListener('click', () => {
+        showHighScoresModal();
+    });
+    topControls.appendChild(timerBtn);
+
+    // Экспортируем кнопку таймера для обновления
+    window.timerButton = timerBtn;
+
+    // Кнопка решения
+    const solutionBtn = document.createElement('button');
+    solutionBtn.className = 'solution-btn';
+    solutionBtn.innerHTML = '🔍';
+    solutionBtn.style.cssText = 'color: #fbbf24; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    solutionBtn.addEventListener('mouseenter', () => {
+        solutionBtn.style.transform = 'scale(1.1)';
+    });
+    solutionBtn.addEventListener('mouseleave', () => {
+        solutionBtn.style.transform = 'scale(1)';
+    });
+    solutionBtn.addEventListener('click', () => {
+        showSolution();
+    });
+    topControls.appendChild(solutionBtn);
 
     // Подсказка
     const infoRow = document.createElement('div');

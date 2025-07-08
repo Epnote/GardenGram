@@ -12,6 +12,12 @@ export const toggleTheme = () => {
         themeBtn.style.color = isDark ? 'white' : '#333';
         themeBtn.textContent = isDark ? '☾' : '☀';
     }
+    
+    // Обновляем цвет кнопки подсказки
+    const hintBtn = document.querySelector('.hint-btn');
+    if (hintBtn) {
+        hintBtn.style.color = isDark ? '#34d399' : '#10b981';
+    }
 
     // Форсируем обновление толстых линий 5x5 только внутри .grid
     document.querySelectorAll('.grid .cell-border-right, .grid .cell-border-bottom, .grid .cell-border-left, .grid .cell-border-top')
@@ -39,6 +45,13 @@ export const applySavedTheme = () => {
         const isDark = document.body.classList.contains('dark');
         themeBtn.style.color = isDark ? 'white' : '#333';
         themeBtn.textContent = isDark ? '☾' : '☀';
+    }
+    
+    // Обновляем цвет кнопки подсказки
+    const hintBtn = document.querySelector('.hint-btn');
+    if (hintBtn) {
+        const isDark = document.body.classList.contains('dark');
+        hintBtn.style.color = isDark ? '#34d399' : '#10b981';
     }
 };
 

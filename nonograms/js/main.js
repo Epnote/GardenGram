@@ -3,6 +3,8 @@ import { createGameInterface } from './modules/gameInterface.js';
 import { nonograms } from './modules/nonograms.js';
 import { playSound } from './modules/soundControl.js';
 import { updateCellStyles, applySavedTheme } from './modules/themeControl.js';
+import { initYandexGames, showRewardedAd, isSDKAvailable } from './modules/yandexGames.js';
+import { initTimer, setTimerDisplay, getElapsedTime, resetTimer, setElapsedTime } from './modules/timerControl.js';
 
 
 window.currentNonogram = nonograms['heart'];
@@ -102,7 +104,7 @@ const saveGameData = () => {
             nonogramName: currentNonogram.name,
             cellStates: cellStates,
             completedNumbers: completedNumbers,
-            elapsedTime: '00:00'
+            elapsedTime: getElapsedTime()
         };
         localStorage.setItem('savedGame', JSON.stringify(gameData));
 
@@ -388,10 +390,13 @@ const autoLoadGame = () => {
                 });
             }
             
+            // Проверяем и зачеркиваем полностью заполненные подсказки
+            checkAndMarkCompletedClues();
 
-            
-
-            
+            // Восстанавливаем время игры
+            if (savedGameData.elapsedTime) {
+                setElapsedTime(savedGameData.elapsedTime);
+            }
 
             addHint();
             
@@ -406,6 +411,12 @@ const autoLoadGame = () => {
                 centerNonogram();
                 // Инициализируем клики по подсказкам
                 initClueClickHandlers();
+                
+                // Инициализируем таймер для загруженной игры
+                if (window.timerButton) {
+                    setTimerDisplay(window.timerButton);
+                    initTimer();
+                }
             }, 200);
             
             return true; // Сохранение было загружено
@@ -415,7 +426,15 @@ const autoLoadGame = () => {
     return false; // Сохранение не найдено
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Инициализируем Яндекс.Игры SDK
+    try {
+        await initYandexGames();
+        console.log('Яндекс.Игры SDK готов к работе');
+    } catch (error) {
+        console.log('Яндекс.Игры SDK недоступен, используем локальный режим');
+    }
+    
     // Удаляем старый интерфейс, если он есть
     const old = document.querySelector('.main-container');
     if (old) old.remove();
@@ -444,6 +463,12 @@ document.addEventListener('DOMContentLoaded', () => {
         centerNonogram();
         // Инициализируем клики по подсказкам
         initClueClickHandlers();
+        
+        // Инициализируем таймер
+        if (window.timerButton) {
+            setTimerDisplay(window.timerButton);
+            initTimer();
+        }
     }, 100);
     
     // Центрирование при изменении размера окна
@@ -470,6 +495,12 @@ document.addEventListener('DOMContentLoaded', () => {
         clueNumbers.forEach(number => {
             number.classList.remove('completed');
         });
+        
+        // Сбрасываем таймер
+        resetTimer();
+        
+        // Отмечаем, что состояние игры изменилось
+        markGameDirty();
     };
 
     const resetButton = document.querySelector('.reset-btn');
@@ -536,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 50);
             
             // Сбрасываем таймер
-            startTime = new Date();
+            resetTimer();
             
             // Запускаем автосохранение для новой игры
             startAutoSave();
@@ -741,10 +772,11 @@ const checkWin = (cells, solution) => {
 
     if (isWin) {
         playSound('victory.mp3');
-        showModal('Great! You have solved the nonogram!', '');
+        const elapsedTime = getElapsedTime();
+        showModal(`Great! You have solved the nonogram! Time: ${elapsedTime}`, '');
         stopAutoSave(); // Останавливаем автосохранение при победе
-        addHighScore(currentNonogram.name, currentNonogram.difficulty, '00:00');
-        saveToLibrary(currentNonogram.name, currentNonogram.solution, '00:00');
+        addHighScore(currentNonogram.name, currentNonogram.difficulty, elapsedTime);
+        saveToLibrary(currentNonogram.name, currentNonogram.solution, elapsedTime);
     }
 
     return isWin;
@@ -773,6 +805,529 @@ const showModal = (message, time) => {
     modal.appendChild(closeButton);
     modalOverlay.appendChild(modal);
     document.body.appendChild(modalOverlay);
+};
+
+// Функция для показа модального окна подсказки
+export const showHintModal = () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = `
+        background: var(--modal-background, white);
+        color: var(--modal-text-color, black);
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        max-width: 500px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
+
+    const modalTitle = document.createElement('h2');
+    modalTitle.style.cssText = `
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #10b981;
+    `;
+    modalTitle.textContent = '💡 Подсказка';
+
+    const modalText = document.createElement('div');
+    modalText.style.cssText = `
+        font-size: 16px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    `;
+    modalText.innerHTML = `
+        <p><strong>Получите подсказку за просмотр рекламы!</strong></p>
+        <p>Мы покажем правильное расположение случайных клеток в нонограмме.</p>
+        <p>🎯 <strong>Как это работает:</strong></p>
+        <ul style="text-align: left; margin: 15px 0;">
+            <li>Выберите количество клеток для подсказки (1-5)</li>
+            <li>Нажмите "Смотреть рекламу"</li>
+            <li>Досмотрите рекламу до конца</li>
+            <li>Получите подсказку с правильными клетками</li>
+        </ul>
+        <p style="color: #666; font-size: 14px; margin-top: 15px;">
+            💡 <strong>Совет:</strong> Досмотрите рекламу до конца, чтобы получить награду!
+        </p>
+    `;
+
+    const hintCountContainer = document.createElement('div');
+    hintCountContainer.style.cssText = `
+        margin: 20px 0;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    `;
+
+    const hintCountLabel = document.createElement('label');
+    hintCountLabel.style.cssText = `
+        font-size: 16px;
+        font-weight: bold;
+        margin-right: 10px;
+    `;
+    hintCountLabel.textContent = 'Количество клеток:';
+
+    const hintCountSelect = document.createElement('select');
+    hintCountSelect.style.cssText = `
+        padding: 8px 12px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        background: white;
+    `;
+
+    for (let i = 1; i <= 5; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i;
+        hintCountSelect.appendChild(option);
+    }
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 20px;
+    `;
+
+    const watchAdBtn = document.createElement('button');
+    watchAdBtn.style.cssText = `
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background 0.3s;
+    `;
+    watchAdBtn.textContent = '📺 Смотреть рекламу';
+    watchAdBtn.addEventListener('click', async () => {
+        const count = parseInt(hintCountSelect.value);
+        
+        // Показываем индикатор загрузки
+        watchAdBtn.textContent = '⏳ Загрузка...';
+        watchAdBtn.disabled = true;
+        
+        try {
+            // Показываем рекламу через Яндекс.Игры SDK
+            const rewarded = await showRewardedAd();
+            
+            if (rewarded) {
+                // Пользователь досмотрел рекламу до конца или тестовый режим
+                giveHint(count);
+                showModal('🎉 Подсказка применена!', 2000);
+            } else {
+                // Пользователь закрыл рекламу
+                showModal('❌ Реклама не была досмотрена до конца. Подсказка не выдана.', 3000);
+            }
+        } catch (error) {
+            console.error('Ошибка показа рекламы:', error);
+            // В тестовом режиме все равно даем подсказку
+            if (error && (error.toString().includes('test') || error.toString().includes('development') || error.toString().includes('unavailable'))) {
+                console.log('Тестовый режим: выдаем подсказку несмотря на ошибку');
+                giveHint(count);
+                showModal('🎉 Подсказка применена! (тестовый режим)', 2000);
+            } else {
+                showModal('⚠️ Ошибка показа рекламы. Попробуйте позже.', 3000);
+            }
+        } finally {
+            // Восстанавливаем кнопку
+            watchAdBtn.textContent = '📺 Смотреть рекламу';
+            watchAdBtn.disabled = false;
+            document.body.removeChild(overlay);
+        }
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.style.cssText = `
+        background: #6b7280;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background 0.3s;
+    `;
+    cancelBtn.textContent = 'Отмена';
+    cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+    });
+
+    hintCountContainer.appendChild(hintCountLabel);
+    hintCountContainer.appendChild(hintCountSelect);
+    buttonContainer.appendChild(watchAdBtn);
+    buttonContainer.appendChild(cancelBtn);
+
+    modal.appendChild(modalTitle);
+    modal.appendChild(modalText);
+    modal.appendChild(hintCountContainer);
+    modal.appendChild(buttonContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+};
+
+// Функция для проверки и зачеркивания полностью заполненных подсказок
+const checkAndMarkCompletedClues = () => {
+    if (!currentNonogram || !currentNonogram.solution) return;
+
+    const cells = document.querySelectorAll('.grid .cell');
+    const solution = currentNonogram.solution;
+    const rows = solution.length;
+    const cols = solution[0].length;
+
+    // Проверяем строки
+    for (let row = 0; row < rows; row++) {
+        const rowClues = document.querySelectorAll(`.row-clues .clue:nth-child(${row + 1}) .clue-number`);
+        if (rowClues.length === 0) continue;
+
+        // Анализируем подсказки для строки
+        const rowSolution = solution[row];
+        const clueValues = Array.from(rowClues).map(clue => parseInt(clue.dataset.value));
+        
+        // Проверяем, соответствует ли заполнение подсказкам
+        let currentClueIndex = 0;
+        let currentBlockLength = 0;
+        let isInBlock = false;
+        
+        for (let col = 0; col < cols; col++) {
+            const cellIndex = row * cols + col;
+            const cell = cells[cellIndex];
+            const isFilled = cell.classList.contains('filled');
+            
+            if (isFilled && !isInBlock) {
+                // Начало нового блока
+                isInBlock = true;
+                currentBlockLength = 1;
+            } else if (isFilled && isInBlock) {
+                // Продолжение блока
+                currentBlockLength++;
+            } else if (!isFilled && isInBlock) {
+                // Конец блока
+                if (currentClueIndex < clueValues.length && currentBlockLength === clueValues[currentClueIndex]) {
+                    // Блок соответствует подсказке
+                    rowClues[currentClueIndex].classList.add('completed');
+                    currentClueIndex++;
+                }
+                isInBlock = false;
+                currentBlockLength = 0;
+            }
+        }
+        
+        // Проверяем последний блок в строке
+        if (isInBlock && currentClueIndex < clueValues.length && currentBlockLength === clueValues[currentClueIndex]) {
+            rowClues[currentClueIndex].classList.add('completed');
+        }
+    }
+
+    // Проверяем столбцы
+    for (let col = 0; col < cols; col++) {
+        const colClues = document.querySelectorAll(`.col-clues .clue:nth-child(${col + 1}) .clue-number`);
+        if (colClues.length === 0) continue;
+
+        // Анализируем подсказки для столбца
+        const clueValues = Array.from(colClues).map(clue => parseInt(clue.dataset.value));
+        
+        // Проверяем, соответствует ли заполнение подсказкам
+        let currentClueIndex = 0;
+        let currentBlockLength = 0;
+        let isInBlock = false;
+        
+        for (let row = 0; row < rows; row++) {
+            const cellIndex = row * cols + col;
+            const cell = cells[cellIndex];
+            const isFilled = cell.classList.contains('filled');
+            
+            if (isFilled && !isInBlock) {
+                // Начало нового блока
+                isInBlock = true;
+                currentBlockLength = 1;
+            } else if (isFilled && isInBlock) {
+                // Продолжение блока
+                currentBlockLength++;
+            } else if (!isFilled && isInBlock) {
+                // Конец блока
+                if (currentClueIndex < clueValues.length && currentBlockLength === clueValues[currentClueIndex]) {
+                    // Блок соответствует подсказке
+                    colClues[currentClueIndex].classList.add('completed');
+                    currentClueIndex++;
+                }
+                isInBlock = false;
+                currentBlockLength = 0;
+            }
+        }
+        
+        // Проверяем последний блок в столбце
+        if (isInBlock && currentClueIndex < clueValues.length && currentBlockLength === clueValues[currentClueIndex]) {
+            colClues[currentClueIndex].classList.add('completed');
+        }
+    }
+};
+
+// Функция для выдачи подсказки
+const giveHint = (count) => {
+    if (!currentNonogram || !currentNonogram.solution) {
+        showModal('Ошибка: нонограмма не загружена', 3000);
+        return;
+    }
+
+    const cells = document.querySelectorAll('.grid .cell');
+    const solution = currentNonogram.solution;
+    const rows = solution.length;
+    const cols = solution[0].length;
+
+    // Находим все незаполненные правильные диапазоны
+    const ranges = [];
+    
+    // Проверяем строки
+    for (let row = 0; row < rows; row++) {
+        let startCol = -1;
+        for (let col = 0; col < cols; col++) {
+            const cellIndex = row * cols + col;
+            const cell = cells[cellIndex];
+            
+            if (solution[row][col] === 1 && !cell.classList.contains('filled')) {
+                if (startCol === -1) {
+                    startCol = col;
+                }
+            } else {
+                if (startCol !== -1) {
+                    ranges.push({
+                        type: 'row',
+                        row: row,
+                        start: startCol,
+                        end: col - 1,
+                        length: col - startCol
+                    });
+                    startCol = -1;
+                }
+            }
+        }
+        // Проверяем диапазон в конце строки
+        if (startCol !== -1) {
+            ranges.push({
+                type: 'row',
+                row: row,
+                start: startCol,
+                end: cols - 1,
+                length: cols - startCol
+            });
+        }
+    }
+    
+    // Проверяем столбцы
+    for (let col = 0; col < cols; col++) {
+        let startRow = -1;
+        for (let row = 0; row < rows; row++) {
+            const cellIndex = row * cols + col;
+            const cell = cells[cellIndex];
+            
+            if (solution[row][col] === 1 && !cell.classList.contains('filled')) {
+                if (startRow === -1) {
+                    startRow = row;
+                }
+            } else {
+                if (startRow !== -1) {
+                    ranges.push({
+                        type: 'col',
+                        col: col,
+                        start: startRow,
+                        end: row - 1,
+                        length: row - startRow
+                    });
+                    startRow = -1;
+                }
+            }
+        }
+        // Проверяем диапазон в конце столбца
+        if (startRow !== -1) {
+            ranges.push({
+                type: 'col',
+                col: col,
+                start: startRow,
+                end: rows - 1,
+                length: rows - startRow
+            });
+        }
+    }
+
+    if (ranges.length === 0) {
+        showModal('🎉 Поздравляем! Все клетки уже заполнены правильно!', 3000);
+        return;
+    }
+
+    // Сортируем диапазоны по длине (от больших к меньшим)
+    ranges.sort((a, b) => b.length - a.length);
+
+    // Выбираем диапазоны для подсказки
+    let totalCells = 0;
+    const selectedRanges = [];
+    
+    for (const range of ranges) {
+        if (totalCells + range.length <= count) {
+            selectedRanges.push(range);
+            totalCells += range.length;
+        } else if (range.length <= count) {
+            // Если диапазон помещается в оставшееся количество
+            selectedRanges.push(range);
+            totalCells += range.length;
+        }
+        
+        if (totalCells >= count) break;
+    }
+
+    // Заполняем выбранные диапазоны
+    selectedRanges.forEach(range => {
+        if (range.type === 'row') {
+            for (let col = range.start; col <= range.end; col++) {
+                const cellIndex = range.row * cols + col;
+                const cell = cells[cellIndex];
+                cell.classList.remove('crossed');
+                cell.classList.add('filled');
+            }
+        } else if (range.type === 'col') {
+            for (let row = range.start; row <= range.end; row++) {
+                const cellIndex = row * cols + range.col;
+                const cell = cells[cellIndex];
+                cell.classList.remove('crossed');
+                cell.classList.add('filled');
+            }
+        }
+    });
+
+    // Проверяем и зачеркиваем полностью заполненные подсказки
+    checkAndMarkCompletedClues();
+
+    // Показываем сообщение о подсказке
+    showModal(`💡 Подсказка применена! Заполнено ${totalCells} клеток в ${selectedRanges.length} диапазонах.`, 2000);
+
+    // Отмечаем, что состояние игры изменилось
+    markGameDirty();
+    
+    // Проверяем победу
+    if (checkWin(cells, solution)) {
+        playSound('victory.mp3');
+    }
+};
+
+// Функция для показа решения нонограммы
+export const showSolution = () => {
+    if (!currentNonogram || !currentNonogram.solution) {
+        showModal('Решение недоступно', '');
+        return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = `
+        background: var(--modal-background, white);
+        color: var(--modal-text-color, black);
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
+
+    const modalTitle = document.createElement('h2');
+    modalTitle.style.cssText = `
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #fbbf24;
+    `;
+    modalTitle.textContent = `🔍 Решение: ${currentNonogram.name}`;
+
+    const solutionContainer = document.createElement('div');
+    solutionContainer.style.cssText = `
+        display: inline-block;
+        border: 2px solid #333;
+        background: white;
+        padding: 10px;
+        margin: 10px 0;
+    `;
+
+    const solution = currentNonogram.solution;
+    const rows = solution.length;
+    const cols = solution[0].length;
+
+    // Создаем сетку решения
+    for (let row = 0; row < rows; row++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.style.cssText = 'display: flex; justify-content: center;';
+        
+        for (let col = 0; col < cols; col++) {
+            const cell = document.createElement('div');
+            cell.style.cssText = `
+                width: 20px;
+                height: 20px;
+                border: 1px solid #ccc;
+                background: ${solution[row][col] ? '#333' : 'white'};
+                margin: 0;
+            `;
+            rowDiv.appendChild(cell);
+        }
+        solutionContainer.appendChild(rowDiv);
+    }
+
+    const closeButton = document.createElement('button');
+    closeButton.style.cssText = `
+        background: #fbbf24;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 20px;
+        transition: background 0.3s;
+    `;
+    closeButton.textContent = 'Закрыть';
+    closeButton.addEventListener('click', () => {
+        overlay.remove();
+    });
+
+    modal.appendChild(modalTitle);
+    modal.appendChild(solutionContainer);
+    modal.appendChild(closeButton);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 };
 
 export const showHighScoresModal = () => {
