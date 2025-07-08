@@ -1480,17 +1480,35 @@ export const showLibrary = () => {
                     
                     // Удаляем старое игровое поле
                     const oldField = document.querySelector('.nonogram-container');
-                    if (oldField) oldField.remove();
+                    if (oldField) {
+                        const oldWrapper = oldField.closest('.nonogram-wrapper');
+                        if (oldWrapper) {
+                            oldWrapper.remove();
+                        } else {
+                            oldField.remove();
+                        }
+                    }
                     
                     // Создаем новое игровое поле
                     const newField = createGameField(nonogram);
                     const mainContainer = document.querySelector('.main-container');
                     mainContainer.appendChild(newField);
                     
+                    // Сбрасываем масштаб и позицию
+                    currentScale = 1;
+                    currentTranslateX = 0;
+                    currentTranslateY = 0;
+                    
 
                     
                     // Инициализируем игровое поле
                     initGameField();
+                    
+                    // Добавляем подсказки
+                    addHint();
+                    
+                    // Сбрасываем таймер для новой игры
+                    resetTimer();
                     
                     // Инициализируем управление масштабированием
                     setTimeout(() => {
@@ -1498,7 +1516,25 @@ export const showLibrary = () => {
                         centerNonogram();
                         // Инициализируем клики по подсказкам
                         initClueClickHandlers();
+                        
+                        // Инициализируем таймер
+                        if (window.timerButton) {
+                            setTimerDisplay(window.timerButton);
+                            initTimer();
+                        }
+                        
+                        // Применяем трансформацию
+                        applyTransform();
                     }, 100);
+                    
+                    // Запускаем автосохранение для новой игры
+                    startAutoSave();
+                    
+                    // Обновляем название в кнопке выбора карты
+                    const mapSelectButton = document.querySelector('.map-btn');
+                    if (mapSelectButton) {
+                        mapSelectButton.querySelector('span:first-child').textContent = nonogram.name;
+                    }
                     
 
                     
