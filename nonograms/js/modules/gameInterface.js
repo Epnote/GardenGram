@@ -18,8 +18,8 @@ export function createGameInterface() {
 
     const resetBtn = document.createElement('button');
     resetBtn.className = 'reset-btn';
-    resetBtn.innerHTML = '↻';
-    resetBtn.style.cssText = 'color: #22c55e; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    resetBtn.innerHTML = '<img src="./images/UI/Restart.png" alt="Restart" style="width: 48px; height: 48px;">';
+    resetBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     resetBtn.addEventListener('mouseenter', () => {
         resetBtn.style.transform = 'scale(1.1)';
     });
@@ -30,8 +30,8 @@ export function createGameInterface() {
 
     const randomBtn = document.createElement('button');
     randomBtn.className = 'random-btn';
-    randomBtn.innerHTML = '⚄';
-    randomBtn.style.cssText = 'color: #3b82f6; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    randomBtn.innerHTML = '<img src="./images/UI/Random.png" alt="Random" style="width: 48px; height: 48px;">';
+    randomBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     randomBtn.addEventListener('mouseenter', () => {
         randomBtn.style.transform = 'scale(1.1)';
     });
@@ -42,8 +42,8 @@ export function createGameInterface() {
 
     const libraryBtn = document.createElement('button');
     libraryBtn.className = 'library-btn';
-    libraryBtn.textContent = '📖';
-    libraryBtn.style.cssText = 'color: #8b5cf6; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    libraryBtn.innerHTML = '<img src="./images/UI/Library.png" alt="Library" style="width: 48px; height: 48px;">';
+    libraryBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     libraryBtn.addEventListener('mouseenter', () => {
         libraryBtn.style.transform = 'scale(1.1)';
     });
@@ -57,11 +57,10 @@ export function createGameInterface() {
 
     const themeBtn = document.createElement('button');
     themeBtn.className = 'theme-btn';
-    themeBtn.textContent = '☀';
-    themeBtn.style.cssText = 'color: #333; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    themeBtn.innerHTML = '<img src="./images/UI/LightTheme.png" alt="Theme" style="width: 48px; height: 48px;">';
+    themeBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     if (document.body.classList.contains('dark')) {
-        themeBtn.style.color = 'white';
-        themeBtn.textContent = '☾';
+        themeBtn.innerHTML = '<img src="./images/UI/DarkTheme.png" alt="Theme" style="width: 48px; height: 48px;">';
     }
     themeBtn.addEventListener('mouseenter', () => {
         themeBtn.style.transform = 'scale(1.1)';
@@ -77,8 +76,8 @@ export function createGameInterface() {
     // Кнопки масштабирования
     const zoomInBtn = document.createElement('button');
     zoomInBtn.className = 'zoom-btn';
-    zoomInBtn.innerHTML = '⊕';
-    zoomInBtn.style.cssText = 'color: #f59e0b; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    zoomInBtn.innerHTML = '<img src="./images/UI/Plus.png" alt="Zoom In" style="width: 48px; height: 48px;">';
+    zoomInBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     zoomInBtn.addEventListener('mouseenter', () => {
         zoomInBtn.style.transform = 'scale(1.1)';
     });
@@ -92,8 +91,8 @@ export function createGameInterface() {
 
     const zoomOutBtn = document.createElement('button');
     zoomOutBtn.className = 'zoom-btn';
-    zoomOutBtn.innerHTML = '⊖';
-    zoomOutBtn.style.cssText = 'color: #f59e0b; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    zoomOutBtn.innerHTML = '<img src="./images/UI/Minus.png" alt="Zoom Out" style="width: 48px; height: 48px;">';
+    zoomOutBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     zoomOutBtn.addEventListener('mouseenter', () => {
         zoomOutBtn.style.transform = 'scale(1.1)';
     });
@@ -107,8 +106,8 @@ export function createGameInterface() {
 
     const resetZoomBtn = document.createElement('button');
     resetZoomBtn.className = 'zoom-btn';
-    resetZoomBtn.innerHTML = '⌂';
-    resetZoomBtn.style.cssText = 'color: #f59e0b; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    resetZoomBtn.innerHTML = '<img src="./images/UI/Zero.png" alt="Reset Zoom" style="width: 48px; height: 48px;">';
+    resetZoomBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     resetZoomBtn.addEventListener('mouseenter', () => {
         resetZoomBtn.style.transform = 'scale(1.1)';
     });
@@ -144,8 +143,8 @@ export function createGameInterface() {
     // Кнопка решения
     const solutionBtn = document.createElement('button');
     solutionBtn.className = 'solution-btn';
-    solutionBtn.innerHTML = '🔍';
-    solutionBtn.style.cssText = 'color: #fbbf24; font-size: 48px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    solutionBtn.innerHTML = '<img src="./images/UI/Answer.png" alt="Solution" style="width: 48px; height: 48px;">';
+    solutionBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     solutionBtn.addEventListener('mouseenter', () => {
         solutionBtn.style.transform = 'scale(1.1)';
     });

@@ -6,11 +6,12 @@ export const toggleTheme = () => {
     const isDark = document.body.classList.contains('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     
-    // Обновляем цвет и иконку темы
+    // Обновляем иконку темы
     const themeBtn = document.querySelector('.theme-btn');
     if (themeBtn) {
-        themeBtn.style.color = isDark ? 'white' : '#333';
-        themeBtn.textContent = isDark ? '☾' : '☀';
+        themeBtn.innerHTML = isDark ? 
+            '<img src="./images/UI/DarkTheme.png" alt="Theme" style="width: 48px; height: 48px;">' : 
+            '<img src="./images/UI/LightTheme.png" alt="Theme" style="width: 48px; height: 48px;">';
     }
     
     // Обновляем цвет кнопки подсказки
@@ -39,12 +40,13 @@ export const applySavedTheme = () => {
         document.body.classList.remove('dark');
     }
     
-    // Обновляем цвет и иконку темы
+    // Обновляем иконку темы
     const themeBtn = document.querySelector('.theme-btn');
     if (themeBtn) {
         const isDark = document.body.classList.contains('dark');
-        themeBtn.style.color = isDark ? 'white' : '#333';
-        themeBtn.textContent = isDark ? '☾' : '☀';
+        themeBtn.innerHTML = isDark ? 
+            '<img src="./images/UI/DarkTheme.png" alt="Theme" style="width: 48px; height: 48px;">' : 
+            '<img src="./images/UI/LightTheme.png" alt="Theme" style="width: 48px; height: 48px;">';
     }
     
     // Обновляем цвет кнопки подсказки
