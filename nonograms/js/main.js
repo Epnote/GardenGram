@@ -4,7 +4,8 @@ import { nonograms } from './modules/nonograms.js';
 import { playSound } from './modules/soundControl.js';
 import { updateCellStyles, applySavedTheme } from './modules/themeControl.js';
 import { initYandexGames, showRewardedAd, isSDKAvailable } from './modules/yandexGames.js';
-import { initTimer, setTimerDisplay, getElapsedTime, resetTimer, setElapsedTime } from './modules/timerControl.js';
+import { initTimer, setTimerDisplay, getElapsedTime, resetTimer, setElapsedTime, updateTimerDisplay } from './modules/timerControl.js';
+import { initLisSDK, showRewardedAd as showLisRewardedAd, isRewardedAdAvailable } from './modules/lisSDKIntegration.js';
 
 
 window.currentNonogram = nonograms['heart'];
@@ -393,10 +394,8 @@ const autoLoadGame = () => {
             // Проверяем и зачеркиваем полностью заполненные подсказки
             checkAndMarkCompletedClues();
 
-            // Восстанавливаем время игры
-            if (savedGameData.elapsedTime) {
-                setElapsedTime(savedGameData.elapsedTime);
-            }
+            // Восстанавливаем время игры (будет применено после инициализации таймера)
+            const savedElapsedTime = savedGameData.elapsedTime;
 
             addHint();
             
@@ -411,19 +410,13 @@ const autoLoadGame = () => {
                 centerNonogram();
                 // Инициализируем клики по подсказкам
                 initClueClickHandlers();
-                
-                // Инициализируем таймер для загруженной игры
-                if (window.timerButton) {
-                    setTimerDisplay(window.timerButton);
-                    initTimer();
-                }
             }, 200);
             
-            return true; // Сохранение было загружено
+            return savedElapsedTime; // Возвращаем сохраненное время
         }
     }
     
-    return false; // Сохранение не найдено
+    return null; // Сохранение не найдено
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -433,6 +426,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Яндекс.Игры SDK готов к работе');
     } catch (error) {
         console.log('Яндекс.Игры SDK недоступен, используем локальный режим');
+    }
+    
+    // Инициализируем LisSDK
+    try {
+        await initLisSDK();
+        console.log('LisSDK готов к работе');
+    } catch (error) {
+        console.log('LisSDK недоступен, используем локальный режим');
     }
     
     // Удаляем старый интерфейс, если он есть
@@ -448,10 +449,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.appendChild(mainContainer);
     
     // Пытаемся загрузить сохраненную игру
-    const savedGameLoaded = autoLoadGame();
+    const savedGameData = autoLoadGame();
     
     // Если сохранение не найдено, создаем новую игру
-    if (!savedGameLoaded) {
+    if (!savedGameData) {
         let gameField = createGameField(currentNonogram);
         mainContainer.appendChild(gameField);
         addHint();
@@ -468,6 +469,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.timerButton) {
             setTimerDisplay(window.timerButton);
             initTimer();
+            
+            // Применяем сохраненное время, если есть
+            if (savedGameData) {
+                setElapsedTime(savedGameData);
+            }
+            
+            // Обновляем отображение таймера после инициализации
+            updateTimerDisplay();
         }
     }, 100);
     
@@ -783,28 +792,97 @@ const checkWin = (cells, solution) => {
 };
 
 const showModal = (message, time) => {
-    const modalOverlay = document.createElement('div');
-    modalOverlay.className = 'modal-overlay';
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
 
     const modal = document.createElement('div');
-    modal.className = 'modal';
+    modal.style.cssText = `
+        background: white;
+        color: black;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
     
     const modalText = document.createElement('p');
-    modalText.className = 'modal-text';
+    modalText.style.cssText = `
+        font-size: 18px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    `;
     modalText.textContent = `${message} ${time}`; 
     
     const closeButton = document.createElement('button');
-    closeButton.className = 'modal-close-btn';
+    closeButton.style.cssText = `
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        color: black;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        min-width: 64px;
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 16px;
+    `;
     closeButton.textContent = 'OK';
     
+    // Добавляем hover эффекты
+    closeButton.addEventListener('mouseenter', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 1)';
+        closeButton.style.transform = 'translateY(-2px) scale(1.05)';
+        closeButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 0.9)';
+        closeButton.style.transform = 'translateY(0) scale(1)';
+        closeButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+    });
+    
+    closeButton.addEventListener('mousedown', () => {
+        closeButton.style.transform = 'translateY(0) scale(0.98)';
+        closeButton.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.15)';
+    });
+    
+    closeButton.addEventListener('mouseup', () => {
+        closeButton.style.transform = 'translateY(-2px) scale(1.05)';
+        closeButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
+    });
+    
     closeButton.addEventListener('click', () => {
-        modalOverlay.remove();
+        overlay.remove();
     });
 
     modal.appendChild(modalText);
     modal.appendChild(closeButton);
-    modalOverlay.appendChild(modal);
-    document.body.appendChild(modalOverlay);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 };
 
 // Функция для показа модального окна подсказки
@@ -825,10 +903,9 @@ export const showHintModal = () => {
     `;
 
     const modal = document.createElement('div');
-    modal.className = 'modal';
     modal.style.cssText = `
-        background: var(--modal-background, white);
-        color: var(--modal-text-color, black);
+        background: white;
+        color: black;
         padding: 30px;
         border-radius: 10px;
         text-align: center;
@@ -840,7 +917,8 @@ export const showHintModal = () => {
     modalTitle.style.cssText = `
         font-size: 24px;
         margin-bottom: 20px;
-        color: #10b981;
+        color: black;
+        background: transparent;
     `;
     modalTitle.textContent = '💡 Подсказка';
 
@@ -908,15 +986,24 @@ export const showHintModal = () => {
 
     const watchAdBtn = document.createElement('button');
     watchAdBtn.style.cssText = `
-        background: #10b981;
-        color: white;
+        padding: 12px 20px;
         border: none;
-        padding: 12px 24px;
-        border-radius: 5px;
+        border-radius: 8px;
+        color: black;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(0, 0, 0, 0.2);
         cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        min-width: 64px;
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 16px;
-        font-weight: bold;
-        transition: background 0.3s;
     `;
     watchAdBtn.textContent = '📺 Смотреть рекламу';
     watchAdBtn.addEventListener('click', async () => {
@@ -958,15 +1045,24 @@ export const showHintModal = () => {
 
     const cancelBtn = document.createElement('button');
     cancelBtn.style.cssText = `
-        background: #6b7280;
-        color: white;
+        padding: 12px 20px;
         border: none;
-        padding: 12px 24px;
-        border-radius: 5px;
+        border-radius: 8px;
+        color: black;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(0, 0, 0, 0.2);
         cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        min-width: 64px;
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 16px;
-        font-weight: bold;
-        transition: background 0.3s;
     `;
     cancelBtn.textContent = 'Отмена';
     cancelBtn.addEventListener('click', () => {
@@ -1230,9 +1326,32 @@ const giveHint = (count) => {
 };
 
 // Функция для показа решения нонограммы
-export const showSolution = () => {
+export const showSolution = async () => {
     if (!currentNonogram || !currentNonogram.solution) {
         showModal('Решение недоступно', '');
+        return;
+    }
+
+    // Показываем рекламу за вознаграждение перед показом решения
+    let adShown = false;
+    
+    try {
+        // Сначала пробуем LisSDK
+        if (isRewardedAdAvailable()) {
+            await showLisRewardedAd();
+            adShown = true;
+        } else if (isSDKAvailable()) {
+            // Fallback на Яндекс.Игры SDK
+            await showRewardedAd();
+            adShown = true;
+        }
+    } catch (error) {
+        console.log('Реклама недоступна или была отменена:', error);
+    }
+    
+    // Если реклама не была показана, показываем окно AdNotAvailableNow и выходим
+    if (!adShown) {
+        showModal('AdNotAvailableNow', '');
         return;
     }
 
@@ -1267,11 +1386,14 @@ export const showSolution = () => {
 
     const modalTitle = document.createElement('h2');
     modalTitle.style.cssText = `
-        font-size: 24px;
+        text-align: center;
         margin-bottom: 20px;
-        color: #fbbf24;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--modal-text-color, black);
+        background: transparent;
     `;
-    modalTitle.textContent = `🔍 Решение: ${currentNonogram.name}`;
+    modalTitle.textContent = currentNonogram.name;
 
     const solutionContainer = document.createElement('div');
     solutionContainer.style.cssText = `
@@ -1307,18 +1429,53 @@ export const showSolution = () => {
 
     const closeButton = document.createElement('button');
     closeButton.style.cssText = `
-        background: #fbbf24;
-        color: white;
+        padding: 12px 20px;
         border: none;
-        padding: 12px 24px;
-        border-radius: 5px;
+        border-radius: 8px;
+        color: black;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(0, 0, 0, 0.2);
         cursor: pointer;
-        font-size: 16px;
-        font-weight: bold;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        min-width: 64px;
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         margin-top: 20px;
-        transition: background 0.3s;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 16px;
     `;
     closeButton.textContent = 'Закрыть';
+    
+    // Добавляем hover эффекты
+    closeButton.addEventListener('mouseenter', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 1)';
+        closeButton.style.transform = 'translateY(-2px) scale(1.05)';
+        closeButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 0.9)';
+        closeButton.style.transform = 'translateY(0) scale(1)';
+        closeButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+    });
+    
+    closeButton.addEventListener('mousedown', () => {
+        closeButton.style.transform = 'translateY(0) scale(0.98)';
+        closeButton.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.15)';
+    });
+    
+    closeButton.addEventListener('mouseup', () => {
+        closeButton.style.transform = 'translateY(-2px) scale(1.05)';
+        closeButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
+    });
+    
     closeButton.addEventListener('click', () => {
         overlay.remove();
     });
@@ -1331,21 +1488,49 @@ export const showSolution = () => {
 };
 
 export const showHighScoresModal = () => {
-    const modalOverlay = document.createElement('div');
-    modalOverlay.className = 'high-scores-modal-overlay';
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
 
     const modal = document.createElement('div');
-    modal.className = 'high-scores-modal';
+    modal.style.cssText = `
+        background: white;
+        color: black;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
 
     const modalTitle = document.createElement('h2');
+    modalTitle.style.cssText = `
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 24px;
+        font-weight: 600;
+        color: black;
+        background: transparent;
+    `;
     modalTitle.textContent = 'Last 5 Games';
-    modal.appendChild(modalTitle);
 
     const highScoresTable = document.createElement('table');
     highScoresTable.className = 'high-scores-table';
 
     const headerRow = document.createElement('tr');
-    ['Nonogram', 'Difficulty', 'Time'].forEach(headerText => {
+    ['Nonogram', 'Time'].forEach(headerText => {
         const header = document.createElement('th');
         header.textContent = headerText;
         headerRow.appendChild(header);
@@ -1355,7 +1540,7 @@ export const showHighScoresModal = () => {
     const highScores = JSON.parse(localStorage.getItem('highScores')) || [];
     highScores.forEach(score => {
         const row = document.createElement('tr');
-        ['nonogramName', 'difficulty', 'time'].forEach(key => {
+        ['nonogramName', 'time'].forEach(key => {
             const cell = document.createElement('td');
             cell.textContent = score[key];
             row.appendChild(cell);
@@ -1363,24 +1548,71 @@ export const showHighScoresModal = () => {
         highScoresTable.appendChild(row);
     });
 
+    modal.appendChild(modalTitle);
     modal.appendChild(highScoresTable);
 
     const closeButton = document.createElement('button');
-    closeButton.className = 'high-scores-modal-close-btn';
+    closeButton.style.cssText = `
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        color: black;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        min-width: 64px;
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 16px;
+    `;
     closeButton.textContent = 'Close';
-    closeButton.addEventListener('click', () => {
-        modalOverlay.remove();
+    
+    // Добавляем hover эффекты
+    closeButton.addEventListener('mouseenter', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 1)';
+        closeButton.style.transform = 'translateY(-2px) scale(1.05)';
+        closeButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
     });
+    
+    closeButton.addEventListener('mouseleave', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 0.9)';
+        closeButton.style.transform = 'translateY(0) scale(1)';
+        closeButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+    });
+    
+    closeButton.addEventListener('mousedown', () => {
+        closeButton.style.transform = 'translateY(0) scale(0.98)';
+        closeButton.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.15)';
+    });
+    
+    closeButton.addEventListener('mouseup', () => {
+        closeButton.style.transform = 'translateY(-2px) scale(1.05)';
+        closeButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
+    });
+    
+    closeButton.addEventListener('click', () => {
+        overlay.remove();
+    });
+    
     modal.appendChild(closeButton);
-    modalOverlay.appendChild(modal);
-    document.body.appendChild(modalOverlay);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 };
 
 const addHighScore = (nonogramName, difficulty, time) => {
     const highScores = JSON.parse(localStorage.getItem('highScores')) || [];
     const newScore = {
         nonogramName: nonogramName,
-        difficulty: difficulty,
         time: time
     };
     
@@ -1418,32 +1650,61 @@ const addHighScore = (nonogramName, difficulty, time) => {
 export const showLibrary = () => {
     const library = JSON.parse(localStorage.getItem('nonogramLibrary')) || [];
     
-    const modalOverlay = document.createElement('div');
-    modalOverlay.className = 'modal-overlay';
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
 
     const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.maxWidth = '800px';
-    modal.style.width = '90%';
+    modal.style.cssText = `
+        background: white;
+        color: black;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        max-width: 1200px;
+        width: 98%;
+        max-height: 90vh;
+        overflow: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
     
     const modalTitle = document.createElement('h2');
+    modalTitle.style.cssText = `
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 24px;
+        font-weight: 600;
+        color: black;
+        background: transparent;
+    `;
     modalTitle.textContent = 'Library of Solved Nonograms';
-    modalTitle.style.marginBottom = '20px';
+    
     modal.appendChild(modalTitle);
     
     if (library.length === 0) {
         const noItems = document.createElement('p');
         noItems.textContent = 'No solved nonograms yet. Solve some puzzles to see them here!';
         noItems.style.textAlign = 'center';
-        noItems.style.color = document.body.classList.contains('dark') ? '#ccc' : '#666';
+        noItems.style.color = '#666';
         modal.appendChild(noItems);
     } else {
         const libraryGrid = document.createElement('div');
         libraryGrid.style.display = 'grid';
         libraryGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
         libraryGrid.style.gap = '15px';
-        libraryGrid.style.maxHeight = '400px';
+        libraryGrid.style.maxHeight = '800px';
         libraryGrid.style.overflowY = 'auto';
+        libraryGrid.style.padding = '20px';
         
         library.forEach(item => {
             const nonogramCard = document.createElement('div');
@@ -1453,18 +1714,18 @@ export const showLibrary = () => {
             nonogramCard.style.textAlign = 'center';
             nonogramCard.style.cursor = 'pointer';
             nonogramCard.style.transition = 'transform 0.2s';
-            nonogramCard.style.backgroundColor = document.body.classList.contains('dark') ? '#444' : '#f5f5f5';
-            nonogramCard.style.color = document.body.classList.contains('dark') ? 'white' : 'black';
-            nonogramCard.style.border = document.body.classList.contains('dark') ? '1px solid #666' : '1px solid #ddd';
+            nonogramCard.style.backgroundColor = '#f5f5f5';
+            nonogramCard.style.color = 'black';
+            nonogramCard.style.border = '1px solid #ddd';
             
             nonogramCard.addEventListener('mouseenter', () => {
                 nonogramCard.style.transform = 'scale(1.05)';
-                nonogramCard.style.backgroundColor = document.body.classList.contains('dark') ? '#555' : '#e0e0e0';
+                nonogramCard.style.backgroundColor = '#e0e0e0';
             });
             
             nonogramCard.addEventListener('mouseleave', () => {
                 nonogramCard.style.transform = 'scale(1)';
-                nonogramCard.style.backgroundColor = document.body.classList.contains('dark') ? '#444' : '#f5f5f5';
+                nonogramCard.style.backgroundColor = '#f5f5f5';
             });
             
             // Добавляем обработчик клика для загрузки нонограммы
@@ -1473,7 +1734,7 @@ export const showLibrary = () => {
                 const nonogram = Object.values(nonograms).find(n => n.name === item.name);
                 if (nonogram) {
                     // Закрываем модальное окно библиотеки
-                    modalOverlay.remove();
+                    overlay.remove();
                     
                     // Загружаем нонограмму
                     window.currentNonogram = nonogram;
@@ -1552,7 +1813,7 @@ export const showLibrary = () => {
             thumbnail.style.width = '100px';
             thumbnail.style.height = '100px';
             thumbnail.style.margin = '0 auto 10px';
-            thumbnail.style.border = document.body.classList.contains('dark') ? '1px solid #666' : '1px solid #ddd';
+            thumbnail.style.border = '1px solid #ddd';
 
             
             item.solution.forEach(row => {
@@ -1571,19 +1832,22 @@ export const showLibrary = () => {
             name.textContent = item.name;
             name.style.fontWeight = 'bold';
             name.style.marginBottom = '5px';
-            name.style.color = document.body.classList.contains('dark') ? 'white' : 'black';
+            name.style.color = 'black';
+            name.style.textShadow = '0 0 2px rgba(255, 255, 255, 0.8)';
             
             const time = document.createElement('div');
             time.className = 'library-time';
             time.textContent = `Time: ${item.time}`;
             time.style.fontSize = '12px';
-            time.style.color = document.body.classList.contains('dark') ? '#ccc' : '#666';
+            time.style.color = '#333';
+            time.style.textShadow = '0 0 2px rgba(255, 255, 255, 0.8)';
             
             const date = document.createElement('div');
             date.className = 'library-date';
             date.textContent = new Date(item.solvedAt).toLocaleDateString();
             date.style.fontSize = '10px';
-            date.style.color = document.body.classList.contains('dark') ? '#999' : '#999';
+            date.style.color = '#555';
+            date.style.textShadow = '0 0 2px rgba(255, 255, 255, 0.8)';
             
             nonogramCard.appendChild(thumbnail);
             nonogramCard.appendChild(name);
@@ -1597,16 +1861,61 @@ export const showLibrary = () => {
     }
     
     const closeButton = document.createElement('button');
-    closeButton.className = 'modal-close-btn';
+    closeButton.style.cssText = `
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        color: black;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        min-width: 64px;
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 16px;
+    `;
     closeButton.textContent = 'Close';
-    closeButton.style.marginTop = '20px';
+    
+    // Добавляем hover эффекты
+    closeButton.addEventListener('mouseenter', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 1)';
+        closeButton.style.transform = 'translateY(-2px) scale(1.05)';
+        closeButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 0.9)';
+        closeButton.style.transform = 'translateY(0) scale(1)';
+        closeButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+    });
+    
+    closeButton.addEventListener('mousedown', () => {
+        closeButton.style.transform = 'translateY(0) scale(0.98)';
+        closeButton.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.15)';
+    });
+    
+    closeButton.addEventListener('mouseup', () => {
+        closeButton.style.transform = 'translateY(-2px) scale(1.05)';
+        closeButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
+    });
+    
     closeButton.addEventListener('click', () => {
-        modalOverlay.remove();
+        overlay.remove();
     });
     
     modal.appendChild(closeButton);
-    modalOverlay.appendChild(modal);
-    document.body.appendChild(modalOverlay);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 };
 
 // Функция для инициализации кликов по цифрам в подсказках

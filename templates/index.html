@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nonograms Game Server</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { padding: 10px; background: #f0f0f0; border-radius: 5px; margin: 10px 0; }
+        .game-list { margin: 20px 0; }
+        .game-item { padding: 10px; border: 1px solid #ddd; margin: 5px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Nonograms Game Server</h1>
+        <div class="status">
+            <strong>Status:</strong> <span id="status">Connecting...</span>
+        </div>
+        
+        <h2>Available Puzzles</h2>
+        <div id="puzzles"></div>
+        
+        <h2>Active Games</h2>
+        <div id="games"></div>
+        
+        <h2>Create New Game</h2>
+        <select id="puzzleSize">
+            <option value="5x5">5x5</option>
+            <option value="10x10">10x10</option>
+        </select>
+        <button onclick="createGame()">Create Game</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        socket.on('connect', () => {
+            document.getElementById('status').textContent = 'Connected';
+            loadPuzzles();
+            loadGames();
+        });
+        
+        socket.on('disconnect', () => {
+            document.getElementById('status').textContent = 'Disconnected';
+        });
+        
+        async function loadPuzzles() {
+            const response = await fetch('/api/puzzles');
+            const puzzles = await response.json();
+            const puzzlesDiv = document.getElementById('puzzles');
+            puzzlesDiv.innerHTML = puzzles.map(p => `<div>${p}</div>`).join('');
+        }
+        
+        async function loadGames() {
+            // In a real app, you'd fetch active games
+            document.getElementById('games').innerHTML = '<div>No active games</div>';
+        }
+        
+        async function createGame() {
+            const puzzleSize = document.getElementById('puzzleSize').value;
+            const response = await fetch('/api/games', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({puzzle_size: puzzleSize})
+            });
+            const result = await response.json();
+            alert(`Game created! ID: ${result.game_id}`);
+        }
+    </script>
+</body>
+</html>

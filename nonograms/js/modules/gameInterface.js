@@ -125,7 +125,7 @@ export function createGameInterface() {
     const timerBtn = document.createElement('button');
     timerBtn.className = 'timer-btn';
     timerBtn.innerHTML = '00:00';
-    timerBtn.style.cssText = 'color: #ef4444; font-size: 24px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s; font-family: monospace; min-width: 80px;';
+    timerBtn.style.cssText = 'color: #ef4444; font-size: 20px; font-weight: bold; border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s; font-family: monospace; min-width: 100px;';
     timerBtn.addEventListener('mouseenter', () => {
         timerBtn.style.transform = 'scale(1.1)';
     });
@@ -151,8 +151,8 @@ export function createGameInterface() {
     solutionBtn.addEventListener('mouseleave', () => {
         solutionBtn.style.transform = 'scale(1)';
     });
-    solutionBtn.addEventListener('click', () => {
-        showSolution();
+    solutionBtn.addEventListener('click', async () => {
+        await showSolution();
     });
     topControls.appendChild(solutionBtn);
 
