@@ -131,6 +131,10 @@ const updateButtons = () => {
     if (soundBtn) {
         const isSoundOn = window.isSoundOn !== false;
         soundBtn.title = t(isSoundOn ? 'sound.on' : 'sound.off');
+        // Обновляем иконку
+        soundBtn.innerHTML = isSoundOn ? 
+            '<img src="./images/UI/SoundOn.png" alt="Sound On" style="width: 48px; height: 48px;">' :
+            '<img src="./images/UI/SoundOff.png" alt="Sound Off" style="width: 48px; height: 48px;">';
     }
 };
 

@@ -6,6 +6,7 @@ import { updateCellStyles, applySavedTheme } from './modules/themeControl.js';
 import { initTimer, setTimerDisplay, getElapsedTime, resetTimer, setElapsedTime, updateTimerDisplay } from './modules/timerControl.js';
 import { initLisSDK, showRewardedAd, isRewardedAdAvailable } from './modules/lisSDKIntegration.js';
 import { initLocalization, t, createLanguageToggle } from './modules/localization.js';
+import { initSound } from './modules/soundControl.js';
 
 
 window.currentNonogram = nonograms['heart'];
@@ -105,7 +106,8 @@ const saveGameData = () => {
             nonogramName: currentNonogram.name,
             cellStates: cellStates,
             completedNumbers: completedNumbers,
-            elapsedTime: getElapsedTime()
+            elapsedTime: getElapsedTime(),
+            soundEnabled: window.isSoundOn !== false
         };
         localStorage.setItem('savedGame', JSON.stringify(gameData));
 
@@ -394,6 +396,18 @@ const autoLoadGame = () => {
             // Проверяем и зачеркиваем полностью заполненные подсказки
             checkAndMarkCompletedClues();
 
+            // Восстанавливаем состояние звука
+            if (savedGameData.soundEnabled !== undefined) {
+                window.isSoundOn = savedGameData.soundEnabled;
+                // Обновляем иконку звука
+                const soundBtn = document.querySelector('.sound-btn');
+                if (soundBtn) {
+                    soundBtn.innerHTML = savedGameData.soundEnabled ? 
+                        '<img src="./images/UI/SoundOn.png" alt="Sound On" style="width: 48px; height: 48px;">' :
+                        '<img src="./images/UI/SoundOff.png" alt="Sound Off" style="width: 48px; height: 48px;">';
+                }
+            }
+
             // Восстанавливаем время игры (будет применено после инициализации таймера)
             const savedElapsedTime = savedGameData.elapsedTime;
 
@@ -420,6 +434,9 @@ const autoLoadGame = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Инициализируем звук
+    initSound();
+    
     // Инициализируем локализацию
     await initLocalization();
     

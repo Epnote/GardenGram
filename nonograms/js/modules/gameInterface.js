@@ -1,6 +1,7 @@
 import { nonograms } from './nonograms.js';
 import { toggleTheme } from './themeControl.js';
 import { t } from './localization.js';
+import { toggleSound } from './soundControl.js';
 
 import { createGameField } from './gameField.js';
 import { initGameField, zoomNonogram, resetNonogramView, showHighScoresModal, showSolution } from '../main.js';
@@ -159,7 +160,13 @@ export function createGameInterface() {
     // Кнопка звука
     const soundBtn = document.createElement('button');
     soundBtn.className = 'sound-btn';
-    soundBtn.innerHTML = '<img src="./images/UI/Sound.png" alt="Sound" style="width: 48px; height: 48px;">';
+    
+    // Определяем начальное состояние звука из localStorage
+    const isSoundOn = window.isSoundOn !== false;
+    soundBtn.innerHTML = isSoundOn ? 
+        '<img src="./images/UI/SoundOn.png" alt="Sound On" style="width: 48px; height: 48px;">' :
+        '<img src="./images/UI/SoundOff.png" alt="Sound Off" style="width: 48px; height: 48px;">';
+    
     soundBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
     soundBtn.addEventListener('mouseenter', () => {
         soundBtn.style.transform = 'scale(1.1)';
@@ -168,8 +175,12 @@ export function createGameInterface() {
         soundBtn.style.transform = 'scale(1)';
     });
     soundBtn.addEventListener('click', () => {
-        // Здесь будет переключение звука
-        console.log('Sound button clicked');
+        toggleSound();
+        // Обновляем иконку после переключения
+        const newSoundState = window.isSoundOn !== false;
+        soundBtn.innerHTML = newSoundState ? 
+            '<img src="./images/UI/SoundOn.png" alt="Sound On" style="width: 48px; height: 48px;">' :
+            '<img src="./images/UI/SoundOff.png" alt="Sound Off" style="width: 48px; height: 48px;">';
     });
     topControls.appendChild(soundBtn);
 
