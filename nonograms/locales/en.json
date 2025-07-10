@@ -1,0 +1,102 @@
+{
+  "game": {
+    "title": "GardenGram - Nonograms",
+    "victory": "Great! You have solved the nonogram!",
+    "time": "Time: {time}",
+    "solution_unavailable": "Solution unavailable",
+    "close": "Close",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "buttons": {
+    "reset": "Reset",
+    "random": "Random",
+    "hint": "Hint",
+    "solution": "Solution",
+    "library": "Library",
+    "high_scores": "High Scores",
+    "theme": "Theme",
+    "sound": "Sound",
+    "zoom_in": "Zoom In",
+    "zoom_out": "Zoom Out",
+    "reset_zoom": "Reset Zoom"
+  },
+  "hint": {
+    "title": "💡 Hint",
+    "description": "Get a hint by watching an ad!",
+    "how_it_works": "We will show you the correct placement of random cells in the nonogram.",
+    "instructions": "🎯 How it works:",
+    "step1": "Choose the number of cells for the hint (1-5)",
+    "step2": "Click \"Watch Ad\"",
+    "step3": "Watch the ad to the end",
+    "step4": "Get a hint with correct cells",
+    "tip": "💡 Tip: Watch the ad to the end to get the reward!",
+    "cells_count": "Number of cells:",
+    "watch_ad": "Watch Ad",
+    "applied": "💡 Hint applied! Filled {cells} cells in {ranges} ranges.",
+    "ad_not_available": "Ad not available now",
+    "loading": "⏳ Loading...",
+    "hint_applied": "🎉 Hint applied!",
+    "ad_not_watched": "❌ Ad was not watched to the end. Hint not given.",
+    "test_mode": "🎉 Hint applied! (test mode)",
+    "ad_error": "⚠️ Error showing ad. Try again later.",
+    "nonogram_not_loaded": "Error: nonogram not loaded"
+  },
+  "library": {
+    "title": "📚 Library of Solved Nonograms",
+    "empty": "You don't have any solved nonograms yet",
+    "solved_count": "Solved nonograms: {count}",
+    "time": "Time: {time}",
+    "date": "Date: {date}",
+    "no_solved": "No solved nonograms"
+  },
+  "high_scores": {
+    "title": "🏆 Last 5 Games",
+    "puzzle": "Puzzle",
+    "time": "Time",
+    "date": "Date",
+    "no_scores": "No records"
+  },
+  "sound": {
+    "on": "Sound: on",
+    "off": "Sound: off"
+  },
+  "theme": {
+    "light": "Light theme",
+    "dark": "Dark theme"
+  },
+  "errors": {
+    "ad_not_available": "Ad not available now",
+    "ad_cancelled": "Ad was cancelled",
+    "save_error": "Game save error",
+    "load_error": "Game load error"
+  },
+  "controls": {
+    "mobile": "📱 Mobile: Short tap - fill, long tap - cross, gestures - zoom/move",
+    "desktop": "💻 PC: LMB - fill, RMB - cross, mouse wheel - zoom, drag - move"
+  },
+  "nonograms": {
+    "heart": "Heart",
+    "star": "Star",
+    "flower": "Flower",
+    "tree": "Tree",
+    "house": "House",
+    "cat": "Cat",
+    "dog": "Dog",
+    "bird": "Bird",
+    "fish": "Fish",
+    "butterfly": "Butterfly",
+    "car": "Car",
+    "boat": "Boat",
+    "plane": "Plane",
+    "rocket": "Rocket",
+    "castle": "Castle",
+    "bridge": "Bridge",
+    "mountain": "Mountain",
+    "sun": "Sun",
+    "moon": "Moon",
+    "cloud": "Cloud"
+  }
+} 

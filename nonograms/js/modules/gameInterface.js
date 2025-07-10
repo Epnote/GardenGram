@@ -1,6 +1,6 @@
 import { nonograms } from './nonograms.js';
 import { toggleTheme } from './themeControl.js';
-
+import { t } from './localization.js';
 
 import { createGameField } from './gameField.js';
 import { initGameField, zoomNonogram, resetNonogramView, showHighScoresModal, showSolution } from '../main.js';
@@ -156,6 +156,23 @@ export function createGameInterface() {
     });
     topControls.appendChild(solutionBtn);
 
+    // Кнопка звука
+    const soundBtn = document.createElement('button');
+    soundBtn.className = 'sound-btn';
+    soundBtn.innerHTML = '<img src="./images/UI/Sound.png" alt="Sound" style="width: 48px; height: 48px;">';
+    soundBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; padding: 8px; border-radius: 0; transition: transform 0.2s;';
+    soundBtn.addEventListener('mouseenter', () => {
+        soundBtn.style.transform = 'scale(1.1)';
+    });
+    soundBtn.addEventListener('mouseleave', () => {
+        soundBtn.style.transform = 'scale(1)';
+    });
+    soundBtn.addEventListener('click', () => {
+        // Здесь будет переключение звука
+        console.log('Sound button clicked');
+    });
+    topControls.appendChild(soundBtn);
+
     // Подсказка
     const infoRow = document.createElement('div');
     infoRow.className = 'info-row';
@@ -167,15 +184,14 @@ export function createGameInterface() {
 
     const hint = document.createElement('div');
     hint.className = 'hint';
+    hint.id = 'control-hint';
     
-    if (isMobile()) {
-        hint.innerHTML = '<strong>📱 Мобильное:</strong> Короткое касание - заполнить, долгое касание - крестик, жесты - зум/перемещение';
-    } else {
-        hint.innerHTML = '<strong>💻 ПК:</strong> ЛКМ - заполнить, ПКМ - крестик, колесо мыши - зум, перетаскивание - перемещение';
-    }
+    const hintText = t(isMobile() ? 'controls.mobile' : 'controls.desktop');
+    hint.innerHTML = '<strong>' + hintText + '</strong>';
     infoRow.appendChild(hint);
 
     document.body.appendChild(topControls);
     mainContainer.appendChild(infoRow);
+    
     return mainContainer;
 }

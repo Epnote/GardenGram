@@ -3,9 +3,9 @@ import { createGameInterface } from './modules/gameInterface.js';
 import { nonograms } from './modules/nonograms.js';
 import { playSound } from './modules/soundControl.js';
 import { updateCellStyles, applySavedTheme } from './modules/themeControl.js';
-import { initYandexGames, showRewardedAd, isSDKAvailable } from './modules/yandexGames.js';
 import { initTimer, setTimerDisplay, getElapsedTime, resetTimer, setElapsedTime, updateTimerDisplay } from './modules/timerControl.js';
-import { initLisSDK, showRewardedAd as showLisRewardedAd, isRewardedAdAvailable } from './modules/lisSDKIntegration.js';
+import { initLisSDK, showRewardedAd, isRewardedAdAvailable } from './modules/lisSDKIntegration.js';
+import { initLocalization, t, createLanguageToggle } from './modules/localization.js';
 
 
 window.currentNonogram = nonograms['heart'];
@@ -420,13 +420,8 @@ const autoLoadGame = () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Инициализируем Яндекс.Игры SDK
-    try {
-        await initYandexGames();
-        console.log('Яндекс.Игры SDK готов к работе');
-    } catch (error) {
-        console.log('Яндекс.Игры SDK недоступен, используем локальный режим');
-    }
+    // Инициализируем локализацию
+    await initLocalization();
     
     // Инициализируем LisSDK
     try {
@@ -443,9 +438,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Применяем сохранённую тему
     applySavedTheme();
     
+    // Создаем интерфейс после полной инициализации локализации
     mainContainer = createGameInterface();
     
-    // Сначала добавляем контейнер в DOM
+    // Добавляем контейнер в DOM
     document.body.appendChild(mainContainer);
     
     // Пытаемся загрузить сохраненную игру
@@ -632,11 +628,14 @@ export const initGameField = () => {
             playSound('button-on.mp3');
             // Отмечаем, что состояние игры изменилось
             markGameDirty();
-        }
-        
-        const solution = currentNonogram.solution;
-        if (checkWin(cells, solution)) {
-            playSound('victory.mp3');
+            
+            // Проверяем победу только при изменении закрашенных клеток
+            if (action === 'fill') {
+                const solution = currentNonogram.solution;
+                if (checkWin(cells, solution)) {
+                    playSound('victory.mp3');
+                }
+            }
         }
     };
     
@@ -780,9 +779,12 @@ const checkWin = (cells, solution) => {
     });
 
     if (isWin) {
-        playSound('victory.mp3');
         const elapsedTime = getElapsedTime();
-        showModal(`Great! You have solved the nonogram! Time: ${elapsedTime}`, '');
+        
+        // Сохраняем игру перед остановкой автосохранения
+        saveGameData();
+        
+        showModal(t('game.victory') + ' ' + t('game.time', { time: elapsedTime }), '');
         stopAutoSave(); // Останавливаем автосохранение при победе
         addHighScore(currentNonogram.name, currentNonogram.difficulty, elapsedTime);
         saveToLibrary(currentNonogram.name, currentNonogram.solution, elapsedTime);
@@ -850,7 +852,7 @@ const showModal = (message, time) => {
         margin-right: auto;
         font-size: 16px;
     `;
-    closeButton.textContent = 'OK';
+    closeButton.textContent = t('game.close');
     
     // Добавляем hover эффекты
     closeButton.addEventListener('mouseenter', () => {
@@ -920,7 +922,7 @@ export const showHintModal = () => {
         color: black;
         background: transparent;
     `;
-    modalTitle.textContent = '💡 Подсказка';
+    modalTitle.textContent = t('hint.title');
 
     const modalText = document.createElement('div');
     modalText.style.cssText = `
@@ -929,17 +931,17 @@ export const showHintModal = () => {
         line-height: 1.5;
     `;
     modalText.innerHTML = `
-        <p><strong>Получите подсказку за просмотр рекламы!</strong></p>
-        <p>Мы покажем правильное расположение случайных клеток в нонограмме.</p>
-        <p>🎯 <strong>Как это работает:</strong></p>
+        <p><strong>${t('hint.description')}</strong></p>
+        <p>${t('hint.how_it_works')}</p>
+        <p>🎯 <strong>${t('hint.instructions')}</strong></p>
         <ul style="text-align: left; margin: 15px 0;">
-            <li>Выберите количество клеток для подсказки (1-5)</li>
-            <li>Нажмите "Смотреть рекламу"</li>
-            <li>Досмотрите рекламу до конца</li>
-            <li>Получите подсказку с правильными клетками</li>
+            <li>${t('hint.step1')}</li>
+            <li>${t('hint.step2')}</li>
+            <li>${t('hint.step3')}</li>
+            <li>${t('hint.step4')}</li>
         </ul>
         <p style="color: #666; font-size: 14px; margin-top: 15px;">
-            💡 <strong>Совет:</strong> Досмотрите рекламу до конца, чтобы получить награду!
+            💡 <strong>${t('hint.tip')}</strong>
         </p>
     `;
 
@@ -958,7 +960,7 @@ export const showHintModal = () => {
         font-weight: bold;
         margin-right: 10px;
     `;
-    hintCountLabel.textContent = 'Количество клеток:';
+    hintCountLabel.textContent = t('hint.cells_count');
 
     const hintCountSelect = document.createElement('select');
     hintCountSelect.style.cssText = `
@@ -1005,12 +1007,12 @@ export const showHintModal = () => {
         justify-content: center;
         font-size: 16px;
     `;
-    watchAdBtn.textContent = '📺 Смотреть рекламу';
+    watchAdBtn.textContent = '📺 ' + t('hint.watch_ad');
     watchAdBtn.addEventListener('click', async () => {
         const count = parseInt(hintCountSelect.value);
         
         // Показываем индикатор загрузки
-        watchAdBtn.textContent = '⏳ Загрузка...';
+        watchAdBtn.textContent = t('hint.loading');
         watchAdBtn.disabled = true;
         
         try {
@@ -1020,10 +1022,10 @@ export const showHintModal = () => {
             if (rewarded) {
                 // Пользователь досмотрел рекламу до конца или тестовый режим
                 giveHint(count);
-                showModal('🎉 Подсказка применена!', 2000);
+                showModal(t('hint.hint_applied'), 2000);
             } else {
                 // Пользователь закрыл рекламу
-                showModal('❌ Реклама не была досмотрена до конца. Подсказка не выдана.', 3000);
+                showModal(t('hint.ad_not_watched'), 3000);
             }
         } catch (error) {
             console.error('Ошибка показа рекламы:', error);
@@ -1031,13 +1033,13 @@ export const showHintModal = () => {
             if (error && (error.toString().includes('test') || error.toString().includes('development') || error.toString().includes('unavailable'))) {
                 console.log('Тестовый режим: выдаем подсказку несмотря на ошибку');
                 giveHint(count);
-                showModal('🎉 Подсказка применена! (тестовый режим)', 2000);
+                showModal(t('hint.test_mode'), 2000);
             } else {
-                showModal('⚠️ Ошибка показа рекламы. Попробуйте позже.', 3000);
+                showModal(t('hint.ad_error'), 3000);
             }
         } finally {
             // Восстанавливаем кнопку
-            watchAdBtn.textContent = '📺 Смотреть рекламу';
+            watchAdBtn.textContent = '📺 ' + t('hint.watch_ad');
             watchAdBtn.disabled = false;
             document.body.removeChild(overlay);
         }
@@ -1064,7 +1066,7 @@ export const showHintModal = () => {
         justify-content: center;
         font-size: 16px;
     `;
-    cancelBtn.textContent = 'Отмена';
+    cancelBtn.textContent = t('game.cancel');
     cancelBtn.addEventListener('click', () => {
         document.body.removeChild(overlay);
     });
@@ -1182,7 +1184,7 @@ const checkAndMarkCompletedClues = () => {
 // Функция для выдачи подсказки
 const giveHint = (count) => {
     if (!currentNonogram || !currentNonogram.solution) {
-        showModal('Ошибка: нонограмма не загружена', 3000);
+        showModal(t('hint.nonogram_not_loaded'), 3000);
         return;
     }
 
@@ -1314,21 +1316,19 @@ const giveHint = (count) => {
     checkAndMarkCompletedClues();
 
     // Показываем сообщение о подсказке
-    showModal(`💡 Подсказка применена! Заполнено ${totalCells} клеток в ${selectedRanges.length} диапазонах.`, 2000);
+    showModal(t('hint.applied', { cells: totalCells, ranges: selectedRanges.length }), 2000);
 
     // Отмечаем, что состояние игры изменилось
     markGameDirty();
     
     // Проверяем победу
-    if (checkWin(cells, solution)) {
-        playSound('victory.mp3');
-    }
+    checkWin(cells, solution);
 };
 
 // Функция для показа решения нонограммы
 export const showSolution = async () => {
     if (!currentNonogram || !currentNonogram.solution) {
-        showModal('Решение недоступно', '');
+        showModal(t('game.solution_unavailable'), '');
         return;
     }
 
@@ -1336,12 +1336,7 @@ export const showSolution = async () => {
     let adShown = false;
     
     try {
-        // Сначала пробуем LisSDK
         if (isRewardedAdAvailable()) {
-            await showLisRewardedAd();
-            adShown = true;
-        } else if (isSDKAvailable()) {
-            // Fallback на Яндекс.Игры SDK
             await showRewardedAd();
             adShown = true;
         }
@@ -1351,7 +1346,7 @@ export const showSolution = async () => {
     
     // Если реклама не была показана, показываем окно AdNotAvailableNow и выходим
     if (!adShown) {
-        showModal('AdNotAvailableNow', '');
+        showModal(t('hint.ad_not_available'), '');
         return;
     }
 
@@ -1451,7 +1446,7 @@ export const showSolution = async () => {
         margin-right: auto;
         font-size: 16px;
     `;
-    closeButton.textContent = 'Закрыть';
+    closeButton.textContent = t('game.close');
     
     // Добавляем hover эффекты
     closeButton.addEventListener('mouseenter', () => {
@@ -1524,13 +1519,13 @@ export const showHighScoresModal = () => {
         color: black;
         background: transparent;
     `;
-    modalTitle.textContent = 'Last 5 Games';
+    modalTitle.textContent = t('high_scores.title');
 
     const highScoresTable = document.createElement('table');
     highScoresTable.className = 'high-scores-table';
 
     const headerRow = document.createElement('tr');
-    ['Nonogram', 'Time'].forEach(headerText => {
+    [t('high_scores.puzzle'), t('high_scores.time')].forEach(headerText => {
         const header = document.createElement('th');
         header.textContent = headerText;
         headerRow.appendChild(header);
@@ -1575,7 +1570,7 @@ export const showHighScoresModal = () => {
         margin-right: auto;
         font-size: 16px;
     `;
-    closeButton.textContent = 'Close';
+    closeButton.textContent = t('game.close');
     
     // Добавляем hover эффекты
     closeButton.addEventListener('mouseenter', () => {
@@ -1687,13 +1682,13 @@ export const showLibrary = () => {
         color: black;
         background: transparent;
     `;
-    modalTitle.textContent = 'Library of Solved Nonograms';
+    modalTitle.textContent = t('library.title');
     
     modal.appendChild(modalTitle);
     
     if (library.length === 0) {
         const noItems = document.createElement('p');
-        noItems.textContent = 'No solved nonograms yet. Solve some puzzles to see them here!';
+        noItems.textContent = t('library.empty');
         noItems.style.textAlign = 'center';
         noItems.style.color = '#666';
         modal.appendChild(noItems);
@@ -1829,7 +1824,7 @@ export const showLibrary = () => {
             
             const name = document.createElement('div');
             name.className = 'library-name';
-            name.textContent = item.name;
+            name.textContent = t(`nonograms.${item.name.toLowerCase()}`) || item.name;
             name.style.fontWeight = 'bold';
             name.style.marginBottom = '5px';
             name.style.color = 'black';
@@ -1837,14 +1832,14 @@ export const showLibrary = () => {
             
             const time = document.createElement('div');
             time.className = 'library-time';
-            time.textContent = `Time: ${item.time}`;
+            time.textContent = t('library.time', { time: item.time });
             time.style.fontSize = '12px';
             time.style.color = '#333';
             time.style.textShadow = '0 0 2px rgba(255, 255, 255, 0.8)';
             
             const date = document.createElement('div');
             date.className = 'library-date';
-            date.textContent = new Date(item.solvedAt).toLocaleDateString();
+            date.textContent = t('library.date', { date: new Date(item.solvedAt).toLocaleDateString() });
             date.style.fontSize = '10px';
             date.style.color = '#555';
             date.style.textShadow = '0 0 2px rgba(255, 255, 255, 0.8)';
@@ -1884,7 +1879,7 @@ export const showLibrary = () => {
         margin-right: auto;
         font-size: 16px;
     `;
-    closeButton.textContent = 'Close';
+    closeButton.textContent = t('game.close');
     
     // Добавляем hover эффекты
     closeButton.addEventListener('mouseenter', () => {
